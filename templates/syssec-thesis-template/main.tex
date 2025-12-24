@@ -1,0 +1,108 @@
+% Available options: syssec-report (report or seminarpaper) or syssec-thesis (bachelorthesis, masterthesis)
+\documentclass[masterthesis]{syssec-thesis}
+% \documentclass[seminarpaper]{syssec-report}
+% \documentclass[report]{syssec-report}
+
+\makeglossaries
+
+\loadglsentries{acronyms/acronyms.tex}
+
+\usepackage{blindtext}
+
+\author{Vorname Nachname}
+\authoraddress{Musterstr.~90\\12345 Essen}
+\matrikelnumber{2251234}
+\title{Titel der Arbeit}
+\supervisor{Univ.-Prof.\ Dipl.-Ing.\ Dr.\ Betreuer Name}
+\reviewerA{Reviewer A}
+\reviewerB{Reviewer B}
+\degreecourse{Angewandte Informatik -- Software and Network Engineering}
+\location{Essen}
+\handoverdate{23.10.2020}
+\semester{Wintersemester 2020/2021}
+
+
+%% load bibs
+\addbibresource{bibliography/bibliography.bib}
+
+\makeatletter
+\newif\ifthesis
+\@ifclassloaded{syssec-thesis}{\thesistrue}{\thesisfalse}
+\makeatother
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{document}
+
+\maketitle				% Title Page
+
+
+\cleardoublepage
+\pagenumbering{Roman}
+%\addcontentsline{toc}{chapter}{Contents}%
+\tableofcontents		% Table of Contents
+\newpage
+\listofillustrations	% List of Figures and List of Tables
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\ifthesis
+\newpage
+\input{components/acknowledgements.tex}
+\fi
+\cleardoublepage
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\ifthesis
+\newpage
+\input{components/abstract.tex}
+\fi
+\glsresetall
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Reset the page counter for the actual content
+
+\cleardoublepage
+\pagenumbering{arabic}
+\setcounter{page}{1}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\newpage
+\input{chapters/chapter01.tex}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\newpage
+\input{chapters/chapter02.tex}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\newpage
+\input{chapters/chapter03.tex}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\newpage
+\input{chapters/chapter04.tex}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\newpage
+\input{chapters/chapter05.tex}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\newpage
+\input{chapters/chapter06.tex}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\newpage
+\input{components/appendix.tex}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\printglossaries
+
+% Affidavit (eidesstattliche Erklärung, german and only for uni-due at the moment)
+% Only required for dissertation, masterarbeit and bachelorarbeit
+\ifthesis
+\cleardoublepage
+\affidavit
+\fi
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\printbibliography[heading=bibintoc]
+
+\end{document}

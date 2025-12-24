@@ -1,0 +1,159 @@
+% Available options: seminarpaper or report
+\documentclass[seminarpaper]{syssec-report}
+
+\makeglossaries
+
+\loadglsentries{acronyms/acronyms.tex}
+
+\usepackage{blindtext}
+\usepackage{lipsum}
+
+%%%%%%%%%%%%%%%%%%%%%%
+%%% LaTeX packages %%%
+%%%%%%%%%%%%%%%%%%%%%%
+
+\usepackage{abstract}
+\usepackage{amsfonts}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage[ngerman,english]{babel}
+\usepackage{caption}
+\usepackage{chngcntr}
+\usepackage{emptypage}
+\usepackage{etoolbox}
+\usepackage{fancyhdr}
+\usepackage[T1]{fontenc}
+\usepackage[paper=a4paper,top=3cm,bottom=3cm]{geometry}
+\usepackage{graphicx}
+\graphicspath{{figures/}}
+\usepackage{hhline}
+\usepackage[utf8]{inputenc}
+\usepackage{multirow}
+\usepackage[square,numbers]{natbib}
+\usepackage{rotating}
+\usepackage{sectsty}
+\usepackage{setspace}
+\usepackage[separate-uncertainty = true,multi-part-units=single,per-mode=symbol]{siunitx}
+\usepackage[format=hang]{subcaption}
+\usepackage{tabto}
+\usepackage[absolute]{textpos}
+\usepackage{tikz}
+\usetikzlibrary{shapes, arrows, positioning}
+\usepackage{titling}
+\usepackage{titlesec}
+\usepackage{xcolor}
+
+% Tables
+\usepackage{tabularx}
+\usepackage{booktabs}
+
+% Pseudo code
+\usepackage[ruled, linesnumbered, vlined, noend]{algorithm2e}
+\usepackage[noend]{algpseudocode}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% LaTeX settings and macros %%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%% Tabularx setting
+\newcolumntype{Y}{>{\centering\arraybackslash}X}
+\renewcommand\tabularxcolumn[1]{m{#1}}
+\setlength\extrarowheight{1pt}
+
+% Pseudo code
+\newcommand\mycommfont[1]{\footnotesize\ttfamily\textcolor{blue}{#1}}
+\SetCommentSty{mycommfont}
+
+%% Key definitions for text elements
+\def\secref#1{Sec.~\ref{#1}}
+\def\figref#1{Fig.~\ref{#1}}
+\def\subfigref#1{\subref{#1})}
+\def\subfigrefenclosed#1{(\subref{#1})}
+\def\tabref#1{Tab.~\ref{#1}}
+\def\subtabref#1{\subref{#1})}
+\def\subtabrefenclosed#1{(\subref{#1})}
+\def\eqref#1{Eq.~(\ref{#1})}
+\def\algref#1{Alg.~\ref{#1}}
+\def\alglineref#1{line~\ref{#1}}
+\algnewcommand{\algorithmicgoto}{\textbf{go to}}%
+\algnewcommand{\Goto}[1]{\algorithmicgoto~line~\ref{#1}}%
+
+% Math definitions
+\def\argmax{\mathop{\rm argmax}}
+\def\argmin{\mathop{\rm argmin}}
+\newcommand{\bigO}[1]{$\mathcal{O}(#1)$}
+\newcommand{\R}{\mathbb{R}}
+\DeclareSIUnit\GB{GB}
+
+% Other useful macros
+\newcommand\todo[1]{\textcolor{red}{#1}}
+\newcommand\etal{\emph{et al.}}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Course and student information %%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\author{Pratik Adhikari}
+\title{Language-Grounded Scene Understanding for Mobile Manipulation}
+\supervisor{Supervisor Name}
+\location{Essen}
+\handoverdate{\today}
+\semester{Winter Semester 2024/2025}
+
+%% load bibs
+\addbibresource{bibliography/bibliography.bib}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{document}
+
+\maketitle              % Title Page
+
+\cleardoublepage
+\pagenumbering{Roman}
+\tableofcontents        % Table of Contents
+\newpage
+\listofillustrations    % List of Figures and List of Tables
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\newpage
+\input{components/abstract.tex}
+\glsresetall
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Reset the page counter for the actual content
+
+\cleardoublepage
+\pagenumbering{arabic}
+\setcounter{page}{1}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\newpage
+\input{chapters/chapter01.tex}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\newpage
+\input{chapters/chapter02.tex}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\newpage
+\input{chapters/chapter03.tex}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\newpage
+\input{chapters/chapter04.tex}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\newpage
+\input{chapters/chapter05.tex}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\newpage
+\input{components/appendix.tex}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\printglossaries
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\printbibliography[heading=bibintoc]
+
+\end{document}
