@@ -1,0 +1,59 @@
+
+\section{Discussion}
+\label{ch:discussion}
+
+This discussion is intentionally \emph{comparative}. If you only list strengths and weaknesses in isolation, you learn nothing.
+
+\subsection{What MoMa-LLM contributes (bullet summary)}
+The core contributions of MoMa-LLM can be stated crisply as:
+
+\begin{enumerate}
+    \item \textbf{A hybrid representation for search:} dynamic scene graph for semantics + Voronoi-based navigation graph for connectivity and safe traversal. \verifycite{Honerkamp2024}{4}{Sec.~III-C, ¶2}{Voronoi graph}
+    \item \textbf{LLM as a high-level policy:} the LLM operates on a serialized structured state and selects among a predefined action set. \verifycite{Honerkamp2024}{3}{Sec.~III-A, ¶2}{two-level policy}
+    \item \textbf{Room-centric reasoning:} explicit inference of doors/rooms and assignment of objects to rooms, so search can be planned over rooms rather than raw coordinates. \verifycite{Honerkamp2024}{5}{Sec.~III-D, ¶1}{door}
+    \item \textbf{An efficiency-oriented metric (AUC-E):} evaluates not just success but how rapidly success is achieved over a budget. \verifycite{Honerkamp2024}{6}{Sec.~V, ¶2}{AUC-E}
+\end{enumerate}
+
+\subsection{Why these were needed (comparison to pre-MoMa work)}
+Before MoMa-LLM, LLM-grounded robotics often suffered from \emph{underspecified state}. SayCan mitigates hallucination by filtering with affordance scores, but does not by itself provide a rich spatial-semantic map for object search. \verifycite{Ahn2022SayCan}{1}{Abstract, ¶1}{affordances}
+
+Similarly, hierarchical object search work (e.g., HIMOS) emphasizes interaction and hierarchical decision making, but is not designed around using an LLM as the high-level selector over a scene graph representation. \verifycite{Schmalstieg2023HIMOS}{1}{Abstract, ¶1}{hierarchical}
+
+MoMa-LLM’s design is therefore a specific synthesis: it takes the \emph{grounded decision philosophy} of LLM robotics and plugs it into a \emph{graph-structured world model} specialized for interactive object search. \verifycite{Honerkamp2024}{3}{Sec.~III-B, ¶1}{world model}
+
+\subsection{How later papers extend the same design space}
+After MoMa-LLM (and in parallel), many systems push on the same weak points:
+
+\paragraph{Better geometry/graph backbones.}
+VoroNav keeps Voronoi structure but targets \emph{zero-shot object navigation}, suggesting that Voronoi graphs are a reusable backbone for LLM-assisted spatial decision making. \verifycite{Wu2024VoroNav}{1}{Title/Abstract, ¶1}{Voronoi-based}
+
+\paragraph{Online updates and richer state summaries.}
+OrionNav emphasizes online updates of scene structure, which is essential when the environment changes during execution. \verifycite{Devarakonda2024OrionNav}{1}{Abstract, ¶1}{online}
+
+\paragraph{Memory as a first-class component.}
+MORE argues that long-horizon autonomy needs explicit memory mechanisms; this is directly relevant to MoMa-LLM because object search often spans multiple rooms and revisits. \verifycite{Mohammadi2025MORE}{1}{Title/Abstract, ¶1}{Memory-Augmented}
+
+\paragraph{Concealed spaces and interaction-heavy retrieval.}
+StretchAI explicitly targets dynamic and concealed spaces, sharpening the claim that search success depends on reasoning about \emph{inside/behind} relations and interactions, not only room-level navigation. \verifycite{Menon2025StretchCompose}{1}{Title, ¶1}{dynamic and concealed}
+
+\subsection{Limitations (with citations that you can verify)}
+The paper itself notes several limitations, and additional ones follow logically from the design.
+
+\begin{itemize}
+    \item \textbf{Perception dependency.} If door detections or object proposals are wrong, the DSG becomes a confident-but-wrong belief state. This is not an edge case; it is the dominant failure channel in cluttered homes. \verifycite{Honerkamp2024}{11}{Conclusion, ¶1}{perception}
+    \item \textbf{Prompt and action-space brittleness.} The LLM can only select among the provided actions and only reason over the serialized state; redesigning either can change behavior substantially, making reproducibility tricky. \verifycite{Honerkamp2024}{6}{Sec.~IV, ¶1}{prompt}
+    \item \textbf{Room abstraction limits.} Assigning objects to rooms simplifies planning but can hide important sub-structure (containers, shelves) that drives real retrieval difficulty. \verifycite{Honerkamp2024}{5}{Sec.~III-E, ¶1}{assign}
+    \item \textbf{Dynamics and partial observability.} The DSG is dynamic, but the system does not fully solve non-stationarity (humans moving objects, doors closing). Later work increasingly treats dynamics and memory as explicit problems. \verifycite{Mohammadi2025MORE}{1}{Abstract, ¶1}{memory}
+\end{itemize}
+
+\subsection{A ruthless sanity check: what would you implement first?}
+If you want to \emph{learn} from MoMa-LLM, do not start by calling an LLM API. Start by implementing:
+
+\begin{enumerate}
+    \item ESDF $\rightarrow$ GVD $\rightarrow$ Voronoi graph extraction on a simple occupancy grid.
+    \item Door KDE from a set of noisy ``door observations'' in 2D.
+    \item Room graph + object-to-room cost assignment.
+    \item AUC-E computation from a small set of episode traces.
+\end{enumerate}
+
+The appendix gives minimal derivations and toy examples for each, so you can validate your implementation against hand calculations. \verifycite{Honerkamp2024}{4}{Sec.~III-C, ¶2}{ESDF}

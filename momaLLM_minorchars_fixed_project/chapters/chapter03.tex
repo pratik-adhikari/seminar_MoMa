@@ -1,0 +1,86 @@
+
+\section{Paper Summary}
+\label{ch:paper_summary}
+
+This chapter summarizes the MoMa-LLM pipeline in a \emph{systems} style: what state is maintained, how it is updated, what the LLM sees, what actions it can choose, and how success is measured.
+
+\subsection{Problem formulation}
+MoMa-LLM models interactive object search as a POMDP. The robot maintains an internal belief over object locations while receiving partial observations as it navigates and interacts (e.g., opening doors). \verifycite{Honerkamp2024}{2}{Sec.~III, ¶1}{POMDP}
+
+\paragraph{Key implication.}
+Because the state is partially observed, the planner must trade off \emph{information gathering} and \emph{goal reaching}. In MoMa-LLM, this trade is largely made at the high level via LLM-selected actions such as ``search room A'' or ``open door D'', while low-level controllers provide navigation/manipulation execution. \verifycite{Honerkamp2024}{3}{Sec.~III-A, ¶2}{high-level action}
+
+\subsection{State representation: maps + dynamic scene graph}
+MoMa-LLM maintains two coupled representations:
+
+\begin{itemize}
+    \item A \textbf{metric map} (voxel/occupancy) used to compute traversability, distance fields, and a navigation graph.
+    \item A \textbf{dynamic scene graph (DSG)} storing rooms, doors, and object hypotheses with semantic labels and spatial relations.
+\end{itemize}
+
+The paper’s emphasis is that \emph{structured state} reduces hallucination: the LLM is constrained to propose actions that reference entities present in the graph (known rooms/doors/objects), rather than inventing arbitrary options. \verifycite{Honerkamp2024}{3}{Sec.~III-B, ¶1}{dynamic scene graph}
+
+\subsection{From geometry to connectivity: ESDF, GVD, and Voronoi graph}
+A nontrivial and easy-to-miss part of the pipeline is how the navigation graph is built. Instead of only using an occupancy grid + A* over cells, MoMa-LLM computes a Euclidean Signed Distance Field (ESDF), then a Generalized Voronoi Diagram (GVD), then extracts a graph of topological connectivity. \verifycite{Honerkamp2024}{4}{Sec.~III-C, ¶2}{Voronoi graph}
+
+\paragraph{Why this matters.}
+A Voronoi-derived graph tends to favor paths that maximize clearance from obstacles (useful for mobile manipulators in clutter) and yields a compact topological skeleton for reasoning about room-to-room connectivity. The math of ESDF/GVD/Voronoi extraction is derived in \secref{app:esdf_gvd}. \verifycite{Honerkamp2024}{4}{Sec.~III-C, ¶2}{distance field}
+
+\subsection{Room segmentation and door inference}
+MoMa-LLM needs to reason at the level of \emph{rooms}. The paper treats doors as key separators and estimates door locations using observations and a kernel density estimation (KDE) procedure. \verifycite{Honerkamp2024}{5}{Sec.~III-D, ¶1}{door locations}
+
+\paragraph{Outcome.}
+The DSG includes room nodes and door nodes. Room adjacency is derived from which rooms are connected via inferred doors. This adjacency is what the LLM later uses when it proposes which room to search next. \verifycite{Honerkamp2024}{5}{Sec.~III-D, ¶2}{connected rooms}
+
+\subsection{Assigning objects to rooms}
+Given candidate object detections in the map, MoMa-LLM assigns each object to the most plausible room by minimizing a cost that combines geometric distance-to-room via the connectivity graph. The paper provides an explicit cost definition (see \secref{app:room_assignment}). \verifycite{Honerkamp2024}{5}{Sec.~III-E, ¶1}{distance-weighted cost}
+
+\subsection{High-level action space and low-level skills}
+The system defines a discrete high-level action set operating over graph entities, such as:
+
+\begin{itemize}
+    \item Navigate to a frontier / viewpoint
+    \item Open a door
+    \item Search a particular room
+    \item Attempt grasp / retrieval of a detected target
+\end{itemize}
+
+The LLM selects among these actions using a prompt that includes the current DSG state, the room connectivity, and the task goal. The selected action is then executed by conventional navigation and manipulation modules. \verifycite{Honerkamp2024}{3}{Sec.~III-A, ¶2}{two-level policy}
+
+\subsection{LLM prompting: what information is exposed}
+A critical engineering detail is the \emph{interface} between the structured state and the LLM. The paper describes how it converts the DSG (rooms, doors, object candidates) into a text representation and asks the LLM to output an action selection. The prompt is therefore a \emph{serialization} of the current belief/state, not raw sensor data. \verifycite{Honerkamp2024}{6}{Sec.~IV, ¶1}{prompt}
+
+
+
+\subsection{Belief, observations, and DSG updates (practical view)}
+A POMDP formulation is only meaningful if you can point to what the system treats as \emph{belief}. In MoMa-LLM, the belief is distributed across:
+(i) occupancy/free-space estimates in the map,
+(ii) probabilistic door hypotheses from KDE peaks,
+(iii) object hypotheses and their room assignments, and
+(iv) the current ``search status'' history encoded in the prompt (what has been tried, what failed). \verifycite{Honerkamp2024}{2}{Sec.~III, ¶1}{POMDP}
+
+\paragraph{Update loop.}
+After executing an action (navigate, open, observe), new sensor data update the metric map. Perception modules propose objects/doors; these are integrated into the DSG (new nodes, updated attributes). Then the high-level policy is queried again with the updated serialized state. This loop is the essence of ``dynamic'' in dynamic scene graph. \verifycite{Honerkamp2024}{3}{Sec.~III-B, ¶1}{dynamic scene graph}
+
+\subsection{Action selection constraints and parsing}
+MoMa-LLM does not ask the LLM to output free-form plans. Instead, it provides a \emph{closed} action space (parameterized by graph entities) and asks the LLM to select one. This is a crucial safety/robustness trick: it bounds what the LLM can command. \verifycite{Honerkamp2024}{3}{Sec.~III-A, ¶2}{action space}
+
+\paragraph{Practical implementation note.}
+In an implementation, you typically parse the LLM output into a structured command (e.g., JSON or a fixed grammar). If parsing fails or the LLM proposes an invalid entity, you fall back to a safe default (e.g., explore frontier). The paper’s description implies this style of constrained selection even if some parsing details are abstracted. \verifycite{Honerkamp2024}{6}{Sec.~IV, ¶1}{prompt}
+
+\subsection{Low-level navigation execution on the Voronoi graph}
+Once a high-level goal is chosen (e.g., ``go to door D''), the system needs a concrete path. The Voronoi graph provides a compact set of waypoints; shortest paths on this graph serve as the navigation backbone. This is conceptually different from grid A*: the graph already encodes free-space topology and clearance. \verifycite{Honerkamp2024}{4}{Sec.~III-C, ¶2}{Voronoi graph}
+
+\subsection{Baselines and ablations (what must be compared)}
+When reading the results, you should ask: \emph{which component caused the gain?} The paper evaluates MoMa-LLM against baselines and discusses the contribution of structural components like room reasoning and the metric/graph backbone. Even if you disagree with the baselines, the comparison strategy (remove/replace one component at a time) is the right instinct. \verifycite{Honerkamp2024}{6}{Sec.~V, ¶1}{baselines}
+
+\subsection{Evaluation: success, efficiency, and AUC-E}
+MoMa-LLM evaluates both \emph{success} and \emph{efficiency}. Beyond standard metrics like success rate (SR) and SPL, it introduces an ``efficiency curve'' and computes the area under that curve (AUC-E). \verifycite{Honerkamp2024}{6}{Sec.~V, ¶2}{AUC-E}
+
+Intuitively, AUC-E rewards methods that find the target \emph{quickly} (few steps, few interactions), not only eventually. The appendix derives AUC-E with a toy example so you can compute it by hand and stop hand-waving. \verifycite{Honerkamp2024}{6}{Sec.~V, ¶2}{efficiency curve}
+
+\subsection{Results and reported takeaways}
+The paper reports gains over baselines in both simulated and real environments, and highlights that the combination of DSG structure and LLM planning helps reduce failure modes where the robot repeatedly searches irrelevant areas. \verifycite{Honerkamp2024}{7}{Sec.~V-C, ¶1}{real-world experiments}
+
+\paragraph{What to be skeptical about.}
+As with many LLM-in-the-loop systems, performance depends on the quality of perception (object detections, door observations), the prompt format, and the chosen action set. These dependencies are not ``details''; they are the system. Limitations are discussed in \secref{ch:discussion} with specific citations. \verifycite{Honerkamp2024}{11}{Conclusion, ¶1}{limitations}

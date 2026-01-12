@@ -29,7 +29,6 @@
 \usepackage{hhline}
 \usepackage[utf8]{inputenc}
 \usepackage{multirow}
-\usepackage[square,numbers]{natbib}
 \usepackage{rotating}
 \usepackage{sectsty}
 \usepackage{setspace}
@@ -48,8 +47,8 @@
 \usepackage{booktabs}
 
 % Pseudo code
-\usepackage[ruled, linesnumbered, vlined, noend]{algorithm2e}
-\usepackage[noend]{algpseudocode}
+% \usepackage[ruled, linesnumbered, vlined, noend]{algorithm2e}  % Conflicts with algorithm from class
+% \usepackage[noend]{algpseudocode}  % Conflicts with algorithm2e
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% LaTeX settings and macros %%%
@@ -60,9 +59,9 @@
 \renewcommand\tabularxcolumn[1]{m{#1}}
 \setlength\extrarowheight{1pt}
 
-% Pseudo code
-\newcommand\mycommfont[1]{\footnotesize\ttfamily\textcolor{blue}{#1}}
-\SetCommentSty{mycommfont}
+% Pseudo code (algorithm2e specific - commented out)
+% \newcommand\mycommfont[1]{\footnotesize\ttfamily\textcolor{blue}{#1}}
+% \SetCommentSty{mycommfont}
 
 %% Key definitions for text elements
 \def\secref#1{Sec.~\ref{#1}}
@@ -75,8 +74,8 @@
 \def\eqref#1{Eq.~(\ref{#1})}
 \def\algref#1{Alg.~\ref{#1}}
 \def\alglineref#1{line~\ref{#1}}
-\algnewcommand{\algorithmicgoto}{\textbf{go to}}%
-\algnewcommand{\Goto}[1]{\algorithmicgoto~line~\ref{#1}}%
+% \algnewcommand{\algorithmicgoto}{\textbf{go to}}%
+% \algnewcommand{\Goto}[1]{\algorithmicgoto~line~\ref{#1}}%
 
 % Math definitions
 \def\argmax{\mathop{\rm argmax}}

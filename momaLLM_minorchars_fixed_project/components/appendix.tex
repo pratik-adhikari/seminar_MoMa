@@ -1,0 +1,909 @@
+\appendix
+
+\section{Appendix: Mathematical Walkthrough (Newbie-Friendly)}
+\label{app:math_walkthrough}
+
+This appendix is intentionally \emph{self-contained}. It explains the core mathematical objects used in MoMa‑LLM and its supplementary material, with small toy examples so that the symbols do not feel like ``magic''. The goal is not to re-derive SLAM or perception pipelines, but to make the paper’s \emph{evaluation} and \emph{graph-based reasoning} readable if you are rusty with math.
+
+\subsection{Minimal notation you must not be sloppy about}
+We will use the following conventions:
+
+\begin{itemize}
+    \item A \textbf{set} is written as $S=\{a,b,c\}$. Its size is $|S|$.
+    \item A \textbf{sequence} indexed by time is written $(x_t)_{t=1}^{T}$ or simply $x_1,\dots,x_T$.
+    \item A \textbf{graph} is $G=(V,E)$ where $V$ is the set of nodes and $E$ the set of edges.
+    \item ``Estimated'' quantities get subscript $e$ and ``ground truth'' quantities get subscript $g$.
+\end{itemize}
+
+If you do not distinguish sets vs sequences, and estimates vs ground truth, you will misread almost every metric in the supplementary.
+
+\subsection{What is a (dynamic) scene graph, mathematically?}
+At any time step $t$, the robot maintains a scene graph
+\[
+G_t = (V_t, E_t).
+\]
+The node set $V_t$ typically includes multiple \emph{types} of nodes:
+rooms, objects, and sometimes containers or articulated parts (e.g., a drawer). Each node $v\in V_t$ has attributes such as:
+\[
+\text{label}(v)\in\mathcal{L},\qquad
+\text{pose}(v)\in SE(3),\qquad
+\text{state}(v)\in\{\text{open},\text{closed},\text{unknown}\}.
+\]
+Edges $E_t$ encode relations, e.g.\ ``object $o$ is in room $r$'' or spatial proximity.
+
+\paragraph{Why ``dynamic'' matters.}
+The subscript $t$ is not decoration. As the robot explores, it discovers new rooms/objects, corrects earlier beliefs, and updates relations:
+\[
+V_{t+1} \neq V_t,\quad E_{t+1}\neq E_t.
+\]
+This is why evaluation often averages quantities over time (see \secref{app:room_pr}).
+
+\subsection{From continuous distances to discrete language tokens}
+\label{app:distance_tokens}
+
+Many systems avoid putting raw floating point distances into an LLM prompt.
+Instead, a measured distance $d\in\mathbb{R}_{\ge 0}$ is \emph{binned} into a small number of language tokens.
+
+One typical mapping (reported in the MoMa‑LLM supplementary) is:
+
+\begin{table}[h]
+\centering
+\caption{Example: mapping a continuous distance into discrete language tokens.}
+\label{tab:distance_language_mapping}
+\begin{tabular}{@{}ll@{}}
+\toprule
+Distance threshold ($\leq$) & Token \\ \midrule
+$3.0$  & \texttt{veryclose} \\
+$10.0$ & \texttt{near} \\
+$20.0$ & \texttt{far} \\
+$\infty$ & \texttt{distant} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Toy example.}
+If $d=7.2$ meters, then $3.0<7.2\le 10.0$, so the token is \texttt{near}.
+If $d=25$ meters, it becomes \texttt{distant}.
+This discretization makes the prompt compact and reduces sensitivity to noisy metric estimates.
+
+\subsection{Room-segmentation precision and recall (supplementary Eqs.\ (4)--(7))}
+\label{app:room_pr}
+
+The paper evaluates how well an estimated room partition matches the ground-truth partition.
+Let
+\[
+R_g = \{r_g^{(1)},\dots,r_g^{(m)}\},\qquad
+R_e = \{r_e^{(1)},\dots,r_e^{(n)}\}
+\]
+be the sets of ground-truth and estimated rooms, represented as sets of occupied grid cells.
+
+The supplementary defines precision and recall as:
+\begin{align}
+P &= \frac{1}{|R_e|} \sum_{r_e \in R_e} \max_{r_g \in R_g} \frac{|r_g \cap r_e|}{|r_e|}, \label{eq:room_precision}\\
+R &= \frac{1}{|R_g|} \sum_{r_g \in R_g} \max_{r_e \in R_e} \frac{|r_e \cap r_g|}{|r_g|}. \label{eq:room_recall}
+\end{align}
+
+\paragraph{Interpretation (don’t guess—read it).}
+\begin{itemize}
+    \item The inner fraction in \eqref{eq:room_precision} is \emph{``how much of the estimated room is correct''}. You match each estimated room to the best ground-truth room.
+    \item The inner fraction in \eqref{eq:room_recall} is \emph{``how much of the ground-truth room is recovered''}. You match each ground-truth room to the best estimated room.
+\end{itemize}
+
+\paragraph{Tiny numeric example.}
+Suppose there are two ground-truth rooms $R_g=\{A,B\}$ and two estimated rooms $R_e=\{\hat A,\hat B\}$.
+Assume each room is a set of 100 grid cells.
+If $\hat A$ overlaps $A$ on 90 cells and overlaps $B$ on 10 cells, then:
+\[
+\max_{r_g\in R_g}\frac{|r_g\cap \hat A|}{|\hat A|}
+= \max\left(\frac{90}{100},\frac{10}{100}\right)=0.9.
+\]
+Do this for $\hat B$, average over estimated rooms, and you get $P$.
+For $R$, you instead normalize by $|A|$ and $|B|$ (ground-truth room sizes).
+
+\paragraph{Why average over time.}
+Because $G_t$ changes over exploration, the supplementary reports mean and standard deviation over $t=1,\dots,T$:
+\begin{align}
+\bar P &= \frac{1}{T}\sum_{t=1}^{T} P_t,
+&
+\sigma_P &= \sqrt{\frac{1}{T}\sum_{t=1}^{T} (P_t-\bar P)^2}, \label{eq:room_precision_stats}\\
+\bar R &= \frac{1}{T}\sum_{t=1}^{T} R_t,
+&
+\sigma_R &= \sqrt{\frac{1}{T}\sum_{t=1}^{T} (R_t-\bar R)^2}. \label{eq:room_recall_stats}
+\end{align}
+
+\subsection{Interactive search: success, cost, and the efficiency curve}
+MoMa‑LLM evaluates object search with a metric that explicitly trades off \emph{success} against \emph{effort}.
+Let $c$ denote a cost budget (e.g., total traveled distance plus interaction cost).
+Define a success indicator:
+\[
+\mathbf{1}[\text{success at cost }c] =
+\begin{cases}
+1 & \text{if target found within budget } c,\\
+0 & \text{otherwise.}
+\end{cases}
+\]
+Across multiple episodes, the \textbf{success rate at budget $c$} is the average of this indicator.
+
+If you plot success rate as a function of budget, you obtain an \textbf{efficiency curve}:
+\[
+S(c)\in[0,1],\quad \text{for }c\in[0, c_{\max}].
+\]
+A method that succeeds \emph{only if you allow huge budgets} will look worse than a method that succeeds early.
+
+\subsection{AUC‑E: area under the efficiency curve (with a toy trapezoid calculation)}
+AUC‑E compresses the entire curve $S(c)$ into one number:
+\[
+\mathrm{AUC\text{-}E} = \frac{1}{c_{\max}}\int_0^{c_{\max}} S(c)\,dc.
+\]
+In practice, you only have discrete samples $S(c_0),S(c_1),\dots,S(c_K)$.
+A standard numerical approximation is the trapezoidal rule:
+\[
+\int_0^{c_{\max}} S(c)\,dc \approx \sum_{k=0}^{K-1} \frac{S(c_k)+S(c_{k+1})}{2}\,(c_{k+1}-c_k).
+\]
+
+\paragraph{Toy example.}
+Suppose we evaluate at budgets $c=\{0,1,2,3\}$ and observe success rates
+\[
+S(0)=0,\quad S(1)=0.4,\quad S(2)=0.7,\quad S(3)=0.8.
+\]
+Then the trapezoid areas are:
+\[
+A_0=\tfrac{0+0.4}{2}(1-0)=0.2,\ 
+A_1=\tfrac{0.4+0.7}{2}(2-1)=0.55,\ 
+A_2=\tfrac{0.7+0.8}{2}(3-2)=0.75.
+\]
+Total area $\approx 1.5$. If $c_{\max}=3$, then $\mathrm{AUC\text{-}E}\approx 1.5/3=0.5$.
+
+\paragraph{What you should learn from this.}
+AUC‑E rewards methods that reach high success \emph{quickly}. It is harder to ``game'' than reporting success at one arbitrary budget.
+
+\subsection{High-level planning as a constrained decision process}
+It helps to view the system as a decision process:
+\[
+s_t \;\xrightarrow{a_t}\; s_{t+1}.
+\]
+Here the \textbf{state} $s_t$ contains the current graph $G_t$ plus robot pose and memory variables.
+The \textbf{action} $a_t$ is chosen from a small, allowed set $\mathcal{A}$ (go-to, search-room, open, inspect, \dots).
+The key idea is \emph{constraint}: the LLM is not asked to output arbitrary robot commands; it must output an action from $\mathcal{A}$ with valid arguments.
+
+\paragraph{Why this reduces hallucination.}
+If the LLM can only choose actions that exist in the system and reference nodes that exist in $G_t$, you eliminate an entire class of invalid plans (e.g., ``go to the imaginary kitchen'' when no kitchen has been observed).
+
+\subsection{How prompt ``serialization'' relates to math}
+Even though the LLM consumes text, the text is a serialization of structured state.
+Conceptually, the prompt is a function:
+\[
+p_t = f(G_t,\text{robot state},\text{memory}).
+\]
+Good serialization design is equivalent to good feature design: you choose what information is exposed to the planner, in what format, and at what granularity (e.g., distance tokens from \tabref{tab:distance_language_mapping}).
+
+\subsection{Implementation note: low-level execution and failure interpretation}
+MoMa‑LLM plans at the high level, but execution has continuous failure modes: collisions, unreachable handles, segmentation errors, etc.
+In practice, each action $a_t$ has an execution policy $\pi_{a_t}$ that runs until success/failure.
+When you see an ``LLM failure'' in results, ask first:
+\begin{quote}
+Was it really reasoning, or did the low-level policy fail due to geometry/perception?
+\end{quote}
+This distinction matters for future work: fixing perception is not the same as improving high-level reasoning.
+
+
+
+\subsection{Bonus math you will meet everywhere in robotics: $SE(2)$, $SE(3)$, and homogeneous transforms}
+Even if MoMa‑LLM is ``LLM-heavy'', the underlying robot state still lives in rigid-body geometry.
+A robot pose in 3D is an element of the \textbf{special Euclidean group}:
+\[
+SE(3)=\left\{
+\begin{bmatrix}
+R & t\\
+0 & 1
+\end{bmatrix}
+\,\middle|\,
+R\in SO(3),\ t\in\mathbb{R}^3
+\right\}.
+\]
+Here $R$ is a $3\times 3$ rotation matrix and $t$ is a translation vector.
+
+\paragraph{Composition.}
+If frame $A$ to frame $B$ is $T_{AB}$ and $B$ to $C$ is $T_{BC}$, then:
+\[
+T_{AC} = T_{AB}T_{BC}.
+\]
+This is \emph{exactly} what you use when you transform an object pose observed in the camera frame into the map frame.
+
+\paragraph{Toy example in 2D (easier to visualize).}
+In $SE(2)$, a pose is a rotation by $\theta$ and translation $(x,y)$:
+\[
+T(\theta,x,y)=
+\begin{bmatrix}
+\cos\theta & -\sin\theta & x\\
+\sin\theta & \cos\theta & y\\
+0 & 0 & 1
+\end{bmatrix}.
+\]
+Take $\theta=90^\circ$ ($\pi/2$), $x=1$, $y=0$:
+\[
+T =
+\begin{bmatrix}
+0 & -1 & 1\\
+1 & 0 & 0\\
+0 & 0 & 1
+\end{bmatrix}.
+\]
+Apply it to a point $p=(2,0)$ in homogeneous coordinates $\tilde p=(2,0,1)^\top$:
+\[
+\tilde p' = T\tilde p =
+\begin{bmatrix}
+1\\
+2\\
+1
+\end{bmatrix}
+\Rightarrow p'=(1,2).
+\]
+So the point was rotated left by 90 degrees and shifted right by 1.
+
+\subsection{The ``Voronoi graph'' idea in one page}
+MoMa‑LLM (and related work) often plans navigation on a sparse graph rather than on every grid cell.
+The intuition is simple: you want a graph that stays in the \emph{middle of free space}.
+
+\paragraph{Voronoi diagram.}
+Given obstacle points $\mathcal{O}$ in a plane, the Voronoi diagram partitions space into regions closest to each obstacle.
+The \textbf{Voronoi edges} are points that are equally far from (at least) two obstacles.
+Those edges form a graph-like skeleton: the \emph{generalized Voronoi graph} (GVG).
+
+\paragraph{Why it helps.}
+If you drive along the GVG, you maximize clearance from obstacles, which is useful for long-range indoor navigation.
+Planning reduces to shortest path on a graph:
+\[
+\text{path}^\star = \arg\min_{\text{path}} \sum_{(i,j)\in \text{path}} w_{ij},
+\]
+where $w_{ij}$ is edge length (or any weighted cost).
+
+\paragraph{Toy example.}
+Imagine a corridor: obstacles are the two walls.
+The Voronoi edge is the centerline of the corridor.
+The graph collapses a 2D free space into a 1D curve plus junctions.
+
+\subsection{Shortest path on a graph (Dijkstra in equations, not code)}
+Suppose you have a graph $G=(V,E)$ with nonnegative edge weights $w_{ij}\ge 0$.
+Dijkstra’s algorithm computes the minimum-cost distance from a start node $s$ to every node.
+
+Define the optimal cost-to-come:
+\[
+d(v)=\min_{\text{paths }s\to v} \sum_{(i,j)\in \text{path}} w_{ij}.
+\]
+The algorithm maintains a set of ``settled'' nodes whose $d(\cdot)$ is final.
+The key update (relaxation) step is:
+\[
+d(j) \leftarrow \min\big(d(j),\ d(i)+w_{ij}\big),
+\]
+for every edge $(i,j)$ out of the current node $i$.
+
+\paragraph{Why you care.}
+Every time MoMa‑LLM chooses ``go to room X'', the low-level planner is essentially solving a shortest-path problem (maybe with additional constraints).
+
+\subsection{Search as expected cost minimization (a clean mental model)}
+A clean mathematical picture of object search is:
+\begin{quote}
+Pick the next place to look to minimize expected remaining cost.
+\end{quote}
+
+Let the object be in one of $m$ locations $\ell\in\{\ell_1,\dots,\ell_m\}$ (rooms, containers, etc.).
+Let $p_t(\ell)$ be your belief at time $t$.
+If you choose to check location $\ell$, you pay a cost $c(\ell)$ (travel + interaction), and you succeed with probability $p_t(\ell)$.
+
+A one-step greedy expected cost criterion can be written as:
+\[
+\text{score}(\ell)=\frac{p_t(\ell)}{c(\ell)}\quad\Rightarrow\quad
+\ell^\star=\arg\max_{\ell}\text{score}(\ell).
+\]
+This is not what MoMa‑LLM explicitly optimizes, but it explains why the graph context and distance tokens are valuable: they help the planner implicitly trade off probability vs effort.
+
+\paragraph{Tiny example.}
+Two candidate drawers: $A$ has $p=0.6$ and cost $c=30$, $B$ has $p=0.4$ and cost $c=10$.
+Then $p/c$ gives $A:0.02$ vs $B:0.04$, so you check $B$ first even though $A$ is more likely, because it is much cheaper.
+
+\subsection{Belief update when you fail to find the object}
+If you check a location $\ell$ and do \emph{not} find the object, you should reduce its probability and renormalize:
+\[
+p_{t+1}(\ell)=0,\qquad
+p_{t+1}(\ell')=\frac{p_t(\ell')}{1-p_t(\ell)}\ \text{ for }\ell'\neq \ell.
+\]
+This is the simplest possible update rule and already explains why ``memory'' (objects already checked) matters.
+
+\paragraph{Toy example.}
+If $p_t(A)=0.3$, $p_t(B)=0.7$, you check $A$ and fail, then $p_{t+1}(B)=0.7/(1-0.3)=1.0$.
+So after exhausting $A$, the belief collapses onto $B$.
+
+\subsection{How this connects back to MoMa-LLM}
+MoMa‑LLM does not run explicit Bayesian filtering over container priors in the paper.
+Instead, it uses a structured prompt (graph + memory) so that the LLM can apply human priors and update plans after new observations.
+But if you keep the simple belief-update equations above in mind, you will read the qualitative behaviours in the results section with much more clarity.
+
+
+
+
+\subsection{Optional deepening: MDP view and Bellman equations (so RL papers stop scaring you)}
+If you want to connect MoMa‑LLM to robot learning literature, the clean bridge is the Markov Decision Process (MDP).
+
+An MDP is a tuple $(\mathcal{S},\mathcal{A},P,r,\gamma)$ where:
+\begin{itemize}
+    \item $\mathcal{S}$ is the state space (here: graph + robot pose + memory).
+    \item $\mathcal{A}$ is the action space (high-level actions).
+    \item $P(s'|s,a)$ is the transition model (how the state changes).
+    \item $r(s,a)$ is a reward (or negative cost).
+    \item $\gamma\in(0,1]$ is a discount factor.
+\end{itemize}
+
+A \textbf{policy} $\pi(a|s)$ chooses actions.
+The \textbf{return} is
+\[
+G_t = \sum_{k=0}^{\infty} \gamma^k r(s_{t+k},a_{t+k}).
+\]
+The \textbf{value function} of a policy is
+\[
+V^\pi(s)=\mathbb{E}_\pi[G_t\mid s_t=s].
+\]
+The \textbf{optimal value} satisfies the Bellman optimality equation:
+\[
+V^\star(s)=\max_{a\in\mathcal{A}} \left(r(s,a)+\gamma\,\mathbb{E}_{s'\sim P(\cdot|s,a)}\left[V^\star(s')\right]\right).
+\]
+
+\paragraph{Why include this in an LLM paper appendix?}
+Because it clarifies what the LLM is acting as: a policy.
+MoMa‑LLM chooses $a_t$ from a constrained $\mathcal{A}$ based on a state representation (prompt) derived from $G_t$.
+Even if there is no learning, the \emph{structure of the problem} is still an MDP.
+
+\subsection{Worked example: computing room precision/recall on a tiny grid}
+Consider a $4\times 4$ grid (16 cells).
+Assume the ground truth has two rooms:
+\[
+A=\{1,\dots,8\},\qquad B=\{9,\dots,16\}
+\]
+(i.e., top half vs bottom half).
+
+Now suppose your estimator predicts two rooms:
+\[
+\hat A=\{1,\dots,6\}\cup\{9,10\},\qquad
+\hat B=\{7,8\}\cup\{11,\dots,16\}.
+\]
+So the estimator ``leaks'' two bottom cells into $\hat A$.
+
+Compute precision contribution for $\hat A$:
+\[
+\frac{|A\cap \hat A|}{|\hat A|}=\frac{6}{8}=0.75,\qquad
+\frac{|B\cap \hat A|}{|\hat A|}=\frac{2}{8}=0.25,
+\]
+so $\max(\cdot)=0.75$.
+
+For $\hat B$:
+\[
+\frac{|A\cap \hat B|}{|\hat B|}=\frac{2}{8}=0.25,\qquad
+\frac{|B\cap \hat B|}{|\hat B|}=\frac{6}{8}=0.75,
+\]
+so again $\max(\cdot)=0.75$.
+
+Therefore $P=(0.75+0.75)/2=0.75$.
+
+Now recall: for $A$,
+\[
+\frac{|A\cap \hat A|}{|A|}=\frac{6}{8}=0.75,\qquad
+\frac{|A\cap \hat B|}{|A|}=\frac{2}{8}=0.25,
+\]
+so best match gives $0.75$.
+Similarly for $B$ it is $0.75$.
+Hence $R=0.75$.
+
+This example is deliberately boring: it shows that the metric behaves like you expect.
+
+\subsection{Worked example: comparing two methods via AUC‑E}
+Method 1 reaches success faster; Method 2 reaches similar final success but needs more budget.
+Let $c=\{0,1,2,3,4\}$ and
+\[
+S_1=\{0, 0.5, 0.7, 0.8, 0.85\},\qquad
+S_2=\{0, 0.2, 0.5, 0.8, 0.85\}.
+\]
+Compute AUC by trapezoids (each interval has width 1):
+\[
+\text{Area}_1=\tfrac{0+0.5}{2}+\tfrac{0.5+0.7}{2}+\tfrac{0.7+0.8}{2}+\tfrac{0.8+0.85}{2}=0.25+0.6+0.75+0.825=2.425,
+\]
+\[
+\text{Area}_2=\tfrac{0+0.2}{2}+\tfrac{0.2+0.5}{2}+\tfrac{0.5+0.8}{2}+\tfrac{0.8+0.85}{2}=0.1+0.35+0.65+0.825=1.925.
+\]
+With $c_{\max}=4$, we get $\mathrm{AUC\text{-}E}_1\approx 0.606$ and $\mathrm{AUC\text{-}E}_2\approx 0.481$.
+So AUC‑E correctly ranks Method 1 higher, even though both end at $0.85$ success.
+
+\subsection{Micro-exercises (do these if you actually want to learn)}
+If you skip exercises, you will \emph{think} you understand, but you will not.
+
+\begin{enumerate}
+    \item Using \secref{app:distance_tokens}, what token do you get for $d=3.0$? For $d=10.0$? For $d=10.01$?
+    \item In the belief update rule, if you have three locations with probabilities $(0.2,0.3,0.5)$ and you check the second location and fail, what are the updated probabilities?
+    \item Create two fake efficiency curves (5 points each) and compute AUC‑E by hand using trapezoids.
+\end{enumerate}
+
+\paragraph{Answer key (check yourself).}
+\begin{enumerate}
+    \item $d=3.0\Rightarrow$ \texttt{veryclose}. $d=10.0\Rightarrow$ \texttt{near}. $d=10.01\Rightarrow$ \texttt{far}.
+    \item Removing the second location gives remaining mass $1-0.3=0.7$. So updated are $(0.2/0.7,\ 0,\ 0.5/0.7)\approx (0.286,\ 0,\ 0.714)$.
+    \item Your numbers will differ; the only requirement is that you can execute the trapezoid rule without making arithmetic mistakes.
+\end{enumerate}
+
+
+\subsection{Pointers back to the main paper}
+For the exact experimental setup, action definitions, and the original efficiency-curve design choices, refer to the main MoMa-LLM paper.\verifycite{Honerkamp2024}{1}{Abstract, para~1}{grounds language models within structured representations}
+This appendix only aims to remove the mathematical friction so you can read those sections without getting stuck.
+
+\newpage
+\section{Appendix: ESDF, GVD, and Voronoi Graph (Full Derivation + Toy Example)}
+\label{app:esdf_gvd}
+
+This appendix section expands the geometry backbone of MoMa-LLM. The paper relies on the ESDF/GVD/Voronoi pipeline to extract a compact navigation skeleton. \verifycite{Honerkamp2024}{4}{Sec.~III-C, ¶2}{Voronoi}
+
+\subsection{Occupancy grid $\rightarrow$ signed distance}
+Assume a 2D occupancy grid for simplicity. Let $\mathcal{O}\subset\mathbb{R}^2$ be the set of obstacle points (occupied cells mapped to continuous coordinates). Define the \textbf{unsigned distance transform}
+\[
+d(x)=\min_{o\in\mathcal{O}}\|x-o\|_2.
+\]
+This is the distance from a point $x$ to the nearest obstacle.
+
+A \textbf{signed distance field} is obtained by giving points inside obstacles negative sign:
+\[
+\phi(x)=
+\begin{cases}
+-d(x), & x\in \mathcal{O} \\
++d(x), & x\notin \mathcal{O}.
+\end{cases}
+\]
+In 3D this becomes the \textbf{ESDF}: Euclidean Signed Distance Field. \verifycite{Honerkamp2024}{4}{Sec.~III-C, ¶2}{ESDF}
+
+\subsection{Medial axis intuition: why Voronoi emerges}
+If you pick any free-space point $x$, it has one nearest obstacle point $o^\star(x)$. Most points have a \emph{unique} nearest obstacle; but points that are \emph{equidistant to two or more distinct obstacles} form the \textbf{generalized Voronoi diagram (GVD)}. Formally, the GVD is the set
+\[
+\mathrm{GVD}=\left\{x\notin\mathcal{O}\;:\;\exists o_1\neq o_2\in\mathcal{O}\;\text{s.t.}\;\|x-o_1\|=\|x-o_2\|=d(x)\right\}.
+\]
+These are the ``ridges'' of the distance field. They trace the medial axis of free space and often align with corridors. \verifycite{Honerkamp2024}{4}{Sec.~III-C, ¶2}{GVD}
+
+\subsection{Toy example you can compute by hand}
+Consider a $7\times 7$ grid with two vertical obstacle walls (cells occupied) at columns $2$ and $6$. Intuitively, the points with maximum clearance lie on the middle column $4$. That middle column is exactly the Voronoi ridge: it is equidistant to both obstacle walls.
+
+\begin{itemize}
+    \item At cell center $x=(4, y)$, distance to left wall is $|4-2|=2$ and to right wall is $|6-4|=2$.
+    \item For any $x=(3, y)$, nearest obstacle is left wall (distance $1$), so it is \emph{not} on GVD.
+\end{itemize}
+
+So the GVD here is the set of grid centers with $x=4$. When you prune and discretize that ridge, you get a \textbf{graph} whose nodes/edges form a safe navigation skeleton. That is why a Voronoi graph is a compact navigation structure. \verifycite{Wu2024VoroNav}{1}{Title/Abstract, ¶1}{Voronoi-based}
+
+\subsection{Graph extraction (conceptual)}
+In practice, the pipeline is:
+\begin{enumerate}
+    \item Compute ESDF $\phi(x)$ on the map.
+    \item Identify ridge points (high curvature / multi-source nearest obstacles) $\Rightarrow$ GVD.
+    \item Skeletonize and extract a graph (nodes at junctions, edges along ridges).
+\end{enumerate}
+MoMa-LLM uses this graph to compute distances and connectivity used for room assignment and planning. \verifycite{Honerkamp2024}{5}{Sec.~III-E, ¶1}{cost}
+
+\newpage
+\section{Appendix: Door KDE and Room Graph Inference (Step-by-step)}
+\label{app:door_kde}
+
+MoMa-LLM treats doors as structural separators between rooms. Door locations are noisy because perception is noisy and doors can be seen from multiple viewpoints. The paper uses KDE to estimate door position density. \verifycite{Honerkamp2024}{5}{Sec.~III-D, ¶1}{kernel density}
+
+\subsection{Kernel density estimation in one dimension}
+Suppose you observe door center positions along a hallway coordinate $x$, producing samples $\{x_i\}_{i=1}^n$. KDE estimates a smooth density:
+\[
+\hat{p}(x)=\frac{1}{nh}\sum_{i=1}^n K\left(\frac{x-x_i}{h}\right),
+\]
+where $K$ is a kernel (often Gaussian) and $h>0$ is bandwidth.
+
+\paragraph{Why you care about $h$.}
+If $h$ is too small, $\hat{p}$ is spiky and you get fake doors. If $h$ is too large, two nearby doors merge. In robotics, this is an engineering knob that trades off false positives vs.\ missed structure.
+
+\subsection{Toy KDE example}
+Take three observations near one door: $x_1=0.0$, $x_2=0.1$, $x_3=-0.05$ and one observation near a second door: $x_4=2.0$. With a small bandwidth, the density will have two peaks: one near $0$ and one near $2$. Thresholding the density peaks yields two door hypotheses. This is exactly the logic MoMa-LLM uses in 2D/3D, just with more geometry. \verifycite{Honerkamp2024}{5}{Sec.~III-D, ¶1}{door locations}
+
+\subsection{From doors to rooms}
+Once doors are hypothesized, room connectivity can be approximated as a graph:
+\[
+G_{\text{room}}=(V_{\text{room}},E_{\text{door}}),
+\]
+where $V_{\text{room}}$ are rooms and edges represent doors between them. This graph is what the LLM uses when choosing ``search room'' actions. \verifycite{Honerkamp2024}{5}{Sec.~III-D, ¶2}{connected rooms}
+
+\newpage
+\section{Appendix: Object-to-Room Assignment Cost (Derivation + Example)}
+\label{app:room_assignment}
+
+The paper assigns each detected object hypothesis to a room by minimizing a cost based on distance through the connectivity graph. \verifycite{Honerkamp2024}{5}{Sec.~III-E, ¶1}{cost}
+
+\subsection{Graph-based distance}
+Let $d_G(u,v)$ be the shortest-path distance between two nodes $u,v$ in the navigation/room graph (edges weighted by geometric length). For an object candidate at location $o$ and a room node $r$, define:
+\[
+c(r \mid o)=d_G(r,o) + \lambda \cdot \text{penalty}(r,o),
+\]
+where $\lambda$ weights extra penalties (e.g., crossing doors, uncertainty). The exact form in MoMa-LLM is tailored to their graph; the key point is: \emph{distance is not Euclidean in open space, it is distance along feasible connectivity}. \verifycite{Honerkamp2024}{5}{Sec.~III-E, ¶1}{distance-weighted}
+
+\subsection{Toy example}
+Rooms: $\{A,B\}$ connected by one door edge of length $3$. Object $o$ is located inside room $B$ at distance $1$ from the door on the $B$ side. Then:
+\[
+d_G(B,o)\approx 1,\qquad d_G(A,o)\approx 3+1=4.
+\]
+So the assignment chooses room $B$. This sounds trivial until you have many rooms and partial maps; then the graph distance is the only sane way to assign. \verifycite{Honerkamp2024}{5}{Sec.~III-E, ¶1}{assign objects to rooms}
+
+\newpage
+\section{Appendix: AUC-E (Efficiency Curve) computed by hand}
+\label{app:auce}
+
+The paper introduces AUC-E as an efficiency-oriented metric. \verifycite{Honerkamp2024}{6}{Sec.~V, ¶2}{AUC-E}
+
+\subsection{Define the curve}
+Let a task have a maximum budget $B$ (steps, time, or actions). For a method, define
+\[
+S(b)=\Pr(\text{success within budget } b),\qquad b\in[0,B].
+\]
+Plotting $S(b)$ vs.\ $b$ yields an efficiency curve: methods that succeed earlier have higher curve earlier. AUC-E is then
+\[
+\mathrm{AUC\text{-}E}=\frac{1}{B}\int_{0}^{B} S(b)\,db.
+\]
+The normalization by $B$ keeps the score in $[0,1]$.
+
+\subsection{Discrete estimate}
+In experiments, you have $N$ episodes. Suppose each episode either succeeds at step $t_i$ or fails (treat as $t_i=\infty$). Then:
+\[
+S(b)\approx \frac{1}{N}\sum_{i=1}^{N}\mathbf{1}[t_i\le b].
+\]
+AUC-E can be approximated by a Riemann sum over budgets.
+
+\subsection{Tiny example (3 episodes)}
+Budget $B=10$. Episode success steps: $t=\{2,7,\infty\}$.
+Then:
+\[
+S(b)=
+\begin{cases}
+0,& b<2\\
+\frac{1}{3},& 2\le b<7\\
+\frac{2}{3},& 7\le b\le 10
+\end{cases}
+\]
+So:
+\[
+\mathrm{AUC\text{-}E}=\frac{1}{10}\left(\int_{0}^{2}0\,db + \int_{2}^{7}\frac{1}{3}\,db + \int_{7}^{10}\frac{2}{3}\,db\right)
+=\frac{1}{10}\left(\frac{5}{3}+\frac{6}{3}\right)=\frac{11}{30}\approx 0.367.
+\]
+This is the kind of calculation you should be able to do quickly; otherwise you will misread papers that propose new metrics. \verifycite{Honerkamp2024}{6}{Sec.~V, ¶2}{efficiency curve}
+
+\newpage
+\section{Appendix: Citation audit checklist (how to self-verify)}
+\label{app:citation_audit}
+
+You requested that citations be verifiable down to page and paragraph. Here is a pragmatic checklist for \emph{you} (not the author) to validate this report:
+
+\begin{enumerate}
+    \item Pick any paragraph. Identify its \textbf{claims}. If it has no verification box, mark it as ``unsupported''.
+    \item For each verification box, open the cited PDF and jump to the stated page. Confirm the anchor phrase exists.
+    \item If the paragraph makes a \textbf{numeric} claim (scores, counts, dataset size), confirm the number is explicitly present on that page. If not, the citation is insufficient.
+    \item If the paragraph makes a \textbf{comparative} claim (``better than X''), confirm the baseline is defined in the cited paper and the comparison is stated.
+\end{enumerate}
+
+This checklist is boring. Good. Boring is how you stop fooling yourself. \verifycite{Honerkamp2024}{6}{Sec.~V, ¶1}{evaluation}
+
+
+\newpage
+\section{Appendix: POMDP basics with a worked belief-update example}
+\label{app:pomdp}
+
+MoMa-LLM explicitly calls the task a POMDP. If that word feels like magic, you need the following. \verifycite{Honerkamp2024}{2}{Sec.~III, ¶1}{POMDP}
+
+\subsection{Definition (do not memorize; understand)}
+A POMDP is a tuple $(\mathcal{S},\mathcal{A},\mathcal{O},T,Z,R,\gamma)$:
+\begin{itemize}
+    \item $\mathcal{S}$: states (true world, including object location, door states, robot pose)
+    \item $\mathcal{A}$: actions (navigate, open door, inspect)
+    \item $\mathcal{O}$: observations (camera detections, door sightings)
+    \item $T(s'|s,a)$: transition model
+    \item $Z(o|s,a)$: observation model
+    \item $R(s,a)$: reward
+    \item $\gamma$: discount
+\end{itemize}
+
+The agent does not observe $s$ directly; it maintains a \textbf{belief} $b(s)=\Pr(s)$.
+
+\subsection{Belief update equation}
+Given belief $b_t$, action $a_t$, and observation $o_{t+1}$:
+\[
+b_{t+1}(s') = \eta\, Z(o_{t+1}\mid s',a_t)\sum_{s\in\mathcal{S}} T(s'\mid s,a_t)\,b_t(s),
+\]
+where $\eta$ is a normalization constant so beliefs sum to 1.
+
+\subsection{Toy example (two rooms, one object)}
+Rooms: $A$ and $B$. State is object location only: $\mathcal{S}=\{A,B\}$.
+Start with uniform belief $b_0(A)=b_0(B)=0.5$.
+
+Action: \emph{inspect room A}. Observation: \emph{did we see the object?} So $\mathcal{O}=\{\text{see},\text{not see}\}$.
+
+Assume:
+\[
+Z(\text{see}\mid A)=0.9,\quad Z(\text{see}\mid B)=0.1,
+\]
+and room inspection does not move object ($T$ is identity).
+
+If you observe \emph{not see}, then:
+\[
+b_1(A)\propto Z(\text{not see}\mid A)\,b_0(A)=0.1\cdot 0.5=0.05,
+\]
+\[
+b_1(B)\propto Z(\text{not see}\mid B)\,b_0(B)=0.9\cdot 0.5=0.45,
+\]
+Normalize: $b_1(A)=0.1$, $b_1(B)=0.9$.
+
+This is exactly the logic behind ``search room A, fail, then search room B'': belief shifts. MoMa-LLM does not write the belief update like this in the main loop, but the DSG + history effectively encode similar belief shifts. \verifycite{Honerkamp2024}{3}{Sec.~III-B, ¶1}{dynamic}
+
+\newpage
+\section{Appendix: Mini-dossiers on post-MoMa papers (what they add)}
+\label{app:postmoma}
+
+This appendix gives short but \emph{operational} summaries of the papers you provided. For each, we state: (i) what problem they target, (ii) the core technical idea, and (iii) what this implies for extending or critiquing MoMa-LLM.
+
+\subsection{VoroNav (Voronoi + LLM for zero-shot object navigation)}
+\textbf{Problem focus.} VoroNav targets \emph{zero-shot object navigation}: given a target object category, navigate to where it is likely to be found without training in the target environment. \verifycite{Wu2024VoroNav}{1}{Abstract, ¶1}{Zero-shot}
+
+\textbf{Core idea.} The method uses a \emph{Voronoi-based} planning backbone, which implicitly favors paths with clearance and yields a compact connectivity structure. The LLM is used to inject semantic priors or decision heuristics into navigation. \verifycite{Wu2024VoroNav}{1}{Title/Abstract, ¶1}{Voronoi-based}
+
+\textbf{Relation to MoMa-LLM.} This strengthens the case that Voronoi graphs are not a MoMa-LLM quirk; they are a reusable abstraction for language-assisted spatial reasoning. MoMa-LLM goes further by coupling the Voronoi backbone with explicit interaction (opening) and with a DSG that stores room/object structure. \verifycite{Honerkamp2024}{4}{Sec.~III-C, ¶2}{Voronoi graph}
+
+\subsection{SayNav (language-instructed navigation)}
+\textbf{Problem focus.} SayNav addresses language-guided navigation: interpret a natural language instruction and produce navigation behavior. \verifycite{Rajvanshi2024SayNav}{1}{Title, ¶1}{SayNav}
+
+\textbf{Core idea.} The paper emphasizes reasoning over an internal state summary that can be produced from perception and map context, then using the LLM to guide navigation decisions. \verifycite{Rajvanshi2024SayNav}{1}{Abstract, ¶1}{navigation}
+
+\textbf{Relation to MoMa-LLM.} MoMa-LLM’s prompt is similarly a state summary, but it is specialized for \emph{object search} and includes door/room structure and object-room assignments. If you are extending MoMa-LLM, SayNav is a useful reference for how to format navigation-centric state in prompts and how to evaluate language grounding without interaction-heavy retrieval. \verifycite{Honerkamp2024}{6}{Sec.~IV, ¶1}{prompt}
+
+\subsection{OrionNav (online scene updates and graph reasoning)}
+\textbf{Problem focus.} OrionNav highlights the need to update scene representations \emph{online} during navigation and uses this structure for reasoning about goals and paths. \verifycite{Devarakonda2024OrionNav}{1}{Abstract, ¶1}{online}
+
+\textbf{Core idea.} Instead of assuming a static world model, the system continuously refines its representation based on new observations and uses this updated structure to guide navigation. \verifycite{Devarakonda2024OrionNav}{1}{Abstract, ¶1}{updates}
+
+\textbf{Relation to MoMa-LLM.} MoMa-LLM also updates a DSG, but the critique is that many dynamics are still not explicitly modeled (objects moved by humans, door states flipping). OrionNav’s emphasis on online updates can be read as a direct response to this class of brittleness: your world model must be maintained as carefully as your controller. \verifycite{Honerkamp2024}{11}{Conclusion, ¶1}{limitations}
+
+\subsection{MORE (memory as a first-class module)}
+\textbf{Problem focus.} MORE argues that memory is essential for long-horizon robot behavior: storing past observations and retrieving them appropriately. \verifycite{Mohammadi2025MORE}{1}{Abstract, ¶1}{Memory}
+
+\textbf{Core idea.} Instead of treating history as only a prompt suffix, MORE promotes dedicated memory mechanisms (storage, retrieval, summarization) that can feed back into decision making. \verifycite{Mohammadi2025MORE}{1}{Title/Abstract, ¶1}{Memory-Augmented}
+
+\textbf{Relation to MoMa-LLM.} MoMa-LLM effectively uses two ``memories'': the DSG (structured state) and the action/history context fed to the LLM. A MoMa-LLM extension that integrates MORE-style memory would likely improve long-horizon search where the robot revisits rooms and must remember failed interactions and partial evidence. \verifycite{Honerkamp2024}{3}{Sec.~III-B, ¶1}{dynamic}
+
+\subsection{StretchAI (search/retrieval in dynamic and concealed spaces)}
+\textbf{Problem focus.} StretchAI targets search and retrieval of objects in \emph{dynamic and concealed spaces}---the hardest part of household robotics where objects are inside containers, behind clutter, or moved during execution. \verifycite{Menon2025StretchCompose}{1}{Title/Abstract, ¶1}{dynamic and concealed}
+
+\textbf{Core idea.} The paper emphasizes open-vocabulary and semantic-aware reasoning for search, suggesting richer semantic priors and reasoning about concealment. \verifycite{Menon2025StretchCompose}{1}{Title, ¶1}{Semantic-Aware Reasoning}
+
+\textbf{Relation to MoMa-LLM.} MoMa-LLM’s room-and-door abstraction is a strong start, but concealed-space retrieval often demands reasoning about \emph{container hierarchies} (cabinet $\rightarrow$ drawer $\rightarrow$ shelf) and about dynamic changes. StretchAI is therefore a roadmap for extending the DSG beyond rooms/doors toward a richer containment graph, while preserving the same key idea: LLM planning should operate on structured, verifiable state. \verifycite{Honerkamp2024}{1}{Abstract, ¶1}{structured}
+
+
+\section{Appendix: From paper to code (pseudocode and data structures)}
+\label{app:pseudocode}
+
+If you cannot map the paper to a concrete data-flow graph, you do not understand it.
+
+\subsection{Core data structures}
+A minimal MoMa-LLM-like implementation needs:
+
+\begin{itemize}
+    \item \textbf{Map:} occupancy grid / TSDF / voxel map storing free/occupied.
+    \item \textbf{ESDF:} scalar field $\phi(x)$ with nearest-obstacle distance.
+    \item \textbf{Voronoi graph:} nodes with coordinates; edges with lengths.
+    \item \textbf{DSG:} a labeled graph with nodes for rooms, doors, objects; edges for adjacency/containment.
+    \item \textbf{Action set:} discrete templates parameterized by DSG entities.
+\end{itemize}
+
+This structure is directly aligned with the paper’s stated components. \verifycite{Honerkamp2024}{3}{Sec.~III, ¶2}{scene graph}
+
+\subsection{High-level loop (pseudocode)}
+\begin{verbatim}
+Initialize map M0 from sensors
+Initialize DSG G0 (empty rooms/objects)
+for t = 0..T:
+    Update map Mt using new sensor data
+    Compute ESDF, GVD, Voronoi graph from Mt (periodically)
+    Update door hypotheses via KDE -> update rooms in DSG
+    Update object hypotheses -> assign to rooms -> update DSG
+    Serialize DSG + history into prompt
+    Ask LLM to choose action a_t from allowed action set
+    Execute low-level skill for a_t (nav / open / inspect / grasp)
+end
+\end{verbatim}
+
+This pseudocode is the skeleton behind the ``two-level policy'' described by the paper. \verifycite{Honerkamp2024}{3}{Sec.~III-A, ¶2}{two-level policy}
+
+\subsection{Where engineering time actually goes}
+Most time is not spent on the LLM call. It is spent on:
+(i) robust state estimation (doors/rooms/objects),
+(ii) interfaces between modules, and
+(iii) fallback behaviors when perception or parsing fails.
+MoMa-LLM’s reported performance assumes these pieces are functional. \verifycite{Honerkamp2024}{11}{Conclusion, ¶1}{limitations}
+
+\newpage
+\section{Appendix: Prompt design as an interface contract}
+\label{app:prompt_contract}
+
+MoMa-LLM uses a prompt that serializes structured state. Treat this as an API contract.
+
+\subsection{What must be in the prompt}
+At minimum, the LLM must see:
+\begin{itemize}
+    \item the \textbf{goal} (target object category),
+    \item the set of \textbf{rooms} and which are explored/unexplored,
+    \item \textbf{connectivity} (which doors connect which rooms),
+    \item current \textbf{candidate detections} and their room assignments,
+    \item the list of \textbf{allowed actions} (with parameters).
+\end{itemize}
+The paper emphasizes that the LLM is called with structured scene information rather than raw pixels. \verifycite{Honerkamp2024}{6}{Sec.~IV, ¶1}{prompt}
+
+\subsection{Common failure modes}
+\begin{itemize}
+    \item \textbf{Ambiguous identifiers:} if rooms are ``room1/room2'' without semantic labels, the LLM may mix them.
+    \item \textbf{Too much text:} long prompts cause truncation and remove critical state.
+    \item \textbf{Invalid entity reference:} the LLM proposes an action with an entity that does not exist.
+\end{itemize}
+You should handle these by deterministic validation and fallback, not by ``hoping the LLM behaves''. MoMa-LLM’s constrained action selection is motivated by this. \verifycite{Honerkamp2024}{3}{Sec.~III-A, ¶2}{action space}
+
+\newpage
+\section{Appendix: Failure modes and diagnostics (what to log)}
+\label{app:failure_modes}
+
+If you run an experiment and only log success/failure, you are wasting your time.
+
+\subsection{Perception failures}
+Log:
+\begin{itemize}
+    \item door observations (positions + confidence) used by KDE,
+    \item object detections (class, pose, score),
+    \item false positives that enter the DSG.
+\end{itemize}
+Because the DSG is a belief state, errors propagate. \verifycite{Honerkamp2024}{5}{Sec.~III-D, ¶1}{door}
+
+\subsection{Planning failures}
+Log:
+\begin{itemize}
+    \item the serialized prompt,
+    \item LLM raw output,
+    \item parsed action, validation result, and fallback triggers.
+\end{itemize}
+This is necessary to debug whether failure was due to prompt/state vs.\ low-level execution. \verifycite{Honerkamp2024}{6}{Sec.~IV, ¶1}{prompt}
+
+\subsection{Execution failures}
+Navigation and manipulation skills fail for mundane reasons (localization drift, controller saturation, gripper slip). MoMa-LLM is not immune; it relies on standard modules, so classical robotics debugging still applies. \verifycite{Honerkamp2024}{7}{Sec.~V-C, ¶1}{real-world}
+
+\newpage
+\section{Appendix: Reproducibility checklist (what a good report includes)}
+\label{app:repro_check}
+
+You asked what ``proper references'' mean. In robotics systems papers, reproducibility also requires \emph{systems details}. Here is a checklist you can apply when reading MoMa-LLM or any follow-up:
+
+\begin{enumerate}
+    \item Environment description (layout, number of rooms, door states).
+    \item Sensors and perception models used (classes, thresholds).
+    \item Map representation and resolution.
+    \item Graph extraction parameters (ESDF resolution, pruning thresholds).
+    \item Prompt template and action grammar.
+    \item LLM model/version and decoding settings.
+    \item Baselines and evaluation budgets.
+\end{enumerate}
+
+MoMa-LLM provides many of these at a high level; as a reader you should still confirm which details are explicit and which are assumed. \verifycite{Honerkamp2024}{6}{Sec.~V, ¶1}{evaluation}
+
+
+\newpage
+\section{Appendix: Worked end-to-end example (tiny house, full loop)}
+\label{app:worked_example}
+
+This section walks through a \emph{complete} MoMa-LLM-style loop on a tiny environment so the symbols in the main paper stop looking like decoration.
+
+\subsection{Environment}
+Two rooms ($A$ and $B$) connected by one door $D$. Target object category: \emph{mug}. The mug is in room $B$, but the robot starts in room $A$ and does not know this.
+
+\subsection{Step 0: initialize belief/state}
+\begin{itemize}
+    \item Map: partial occupancy from initial scan.
+    \item Door hypotheses: none yet.
+    \item DSG: one ``unknown room'' node containing the robot; no door nodes.
+\end{itemize}
+This corresponds to the early exploration phase described in the paper. \verifycite{Honerkamp2024}{3}{Sec.~III-B, ¶1}{dynamic scene graph}
+
+\subsection{Step 1: observe a doorway and update KDE}
+Robot approaches the boundary and observes a doorway candidate at position $x_D$ (noisy). Add this observation into the KDE buffer and recompute density peaks. If a peak passes a threshold, instantiate a door node $D$ in the DSG. \verifycite{Honerkamp2024}{5}{Sec.~III-D, ¶1}{kernel density}
+
+\subsection{Step 2: split into rooms}
+Given a door node, create room nodes $A$ and $B$ in DSG and connect them via $D$. The room adjacency graph now exists and can be serialized into the LLM prompt. \verifycite{Honerkamp2024}{5}{Sec.~III-D, ¶2}{connected rooms}
+
+\subsection{Step 3: prompt and action choice}
+The prompt contains:
+\begin{itemize}
+    \item goal: find mug,
+    \item rooms: $A$ explored partially, $B$ unexplored,
+    \item door $D$ connects $A\leftrightarrow B$,
+    \item allowed actions: search room, open door, explore frontier, attempt grasp.
+\end{itemize}
+The LLM selects an action such as \texttt{OPEN(D)} or \texttt{SEARCH(B)}. \verifycite{Honerkamp2024}{6}{Sec.~IV, ¶1}{prompt}
+
+\subsection{Step 4: execute and update}
+After opening $D$ and entering $B$, perception detects a mug candidate. The object is inserted into DSG and assigned to room $B$ via the graph-distance cost. \verifycite{Honerkamp2024}{5}{Sec.~III-E, ¶1}{assign}
+
+\subsection{Step 5: retrieval}
+If the mug is reachable, the low-level manipulation skill attempts grasp. If it fails, the failure becomes part of the serialized history and can change the next high-level decision. \verifycite{Honerkamp2024}{3}{Sec.~III-A, ¶2}{two-level policy}
+
+\paragraph{What you learned.}
+Every step above is mundane systems engineering. The novelty is the \emph{interface}: a structured state that is rich enough for reasoning, and a constrained high-level decision mechanism that can exploit that structure.
+
+\newpage
+\section{Appendix: Extended comparison matrix (MoMa-LLM vs.\ adjacent work)}
+\label{app:matrix}
+
+This is a higher-resolution version of Table~\ref{tab:related_work_compare}. It is intentionally long so you can use it as a checklist when reading papers.
+
+\begin{longtable}{p{2.7cm}p{2.3cm}p{2.2cm}p{2.2cm}p{2.3cm}}
+\toprule
+\textbf{Work} & \textbf{World representation} & \textbf{Decision layer} & \textbf{Interaction model} & \textbf{What it teaches about MoMa-LLM} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Work} & \textbf{World representation} & \textbf{Decision layer} & \textbf{Interaction model} & \textbf{What it teaches about MoMa-LLM} \\
+\midrule
+\endhead
+
+MoMa-LLM \verifycite{Honerkamp2024}{1}{Abstract, ¶1}{two-level policy} &
+Dynamic scene graph + Voronoi graph \verifycite{Honerkamp2024}{4}{Sec.~III-C, ¶2}{Voronoi graph} &
+LLM chooses from constrained action set \verifycite{Honerkamp2024}{3}{Sec.~III-A, ¶2}{action space} &
+Door opening + search + retrieval \verifycite{Honerkamp2024}{1}{Abstract, ¶1}{Interactive object search} &
+Baseline for structured-state LLM planning \\
+
+SayCan \verifycite{Ahn2022SayCan}{1}{Title, ¶1}{Do As I Can} &
+No explicit spatial graph (task-level tools) \verifycite{Ahn2022SayCan}{1}{Abstract, ¶1}{affordances} &
+LM + affordance scoring \verifycite{Ahn2022SayCan}{1}{Abstract, ¶1}{grounding} &
+Skill execution (varies) &
+MoMa’s DSG is a different grounding mechanism (state grounding vs.\ affordance filtering) \\
+
+VoxPoser \verifycite{Huang2023VoxPoser}{1}{Title, ¶1}{Value Maps} &
+Composable 3D value maps &
+Optimization/planning over values &
+Manipulation-centric interaction &
+MoMa could incorporate VoxPoser-style continuous spatial goals for retrieval \\
+
+Hydra \verifycite{Hughes2022Hydra}{1}{Title, ¶1}{3D Scene Graph} &
+Real-time 3D scene graph &
+Not an LLM planner &
+Not task-specific &
+MoMa can be seen as a task-driven use of scene graphs \\
+
+VoroNav \verifycite{Wu2024VoroNav}{1}{Title, ¶1}{VoroNav} &
+Voronoi planning + language priors &
+LLM-assisted navigation decisions &
+Mostly navigation &
+Validates Voronoi backbone as reusable \\
+
+SayNav \verifycite{Rajvanshi2024SayNav}{1}{Title, ¶1}{SayNav} &
+State summary for navigation &
+LLM reasoning for nav &
+No/limited manipulation &
+Suggests alternative prompt/state formats \\
+
+OrionNav \verifycite{Devarakonda2024OrionNav}{1}{Title, ¶1}{OrionNav} &
+Online-updated scene representation &
+Graph reasoning + LLM &
+Limited interaction &
+Highlights importance of non-stationarity handling \\
+
+MORE \verifycite{Mohammadi2025MORE}{1}{Title, ¶1}{Memory} &
+Memory module (retrieval) &
+LLM + memory retrieval &
+Task dependent &
+Motivates explicit memory beyond DSG + prompt history \\
+
+StretchAI \verifycite{Menon2025StretchCompose}{1}{Title, ¶1}{concealed} &
+Semantic reasoning for concealed spaces &
+LLM + semantics &
+Interaction-heavy retrieval &
+Roadmap for extending MoMa beyond room/door abstraction \\
+
+\bottomrule
+\end{longtable}
+
+This matrix is not ``the truth''. It is a tool: when you read a paper, fill in these fields. If you cannot, you did not understand the paper. \verifycite{Honerkamp2024}{11}{Conclusion, ¶1}{future work}

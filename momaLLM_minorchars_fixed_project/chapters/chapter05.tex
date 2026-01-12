@@ -1,0 +1,11 @@
+
+\section{Conclusion}
+\label{ch:conclusion}
+
+MoMa-LLM is best understood as a \emph{world-model interface} between robotics and LLM reasoning: it constructs a task-relevant structured state (dynamic scene graph + Voronoi connectivity) and uses an LLM to choose high-level actions that drive navigation and interaction during object search. \verifycite{Honerkamp2024}{1}{Abstract, ¶1}{two-level policy}
+
+The main intellectual move is not ``LLMs are powerful''; it is that \emph{structured state} enables controllable, verifiable decision making, and that interactive object search benefits from room- and connectivity-level abstraction. \verifycite{Honerkamp2024}{5}{Sec.~III-D, ¶1}{rooms}
+
+Future work, as evidenced by adjacent literature, pushes toward richer memory, stronger handling of dynamics and concealed spaces, and more robust online map/graph updates. \verifycite{Menon2025StretchCompose}{1}{Abstract, ¶1}{dynamic and concealed}
+
+The appendix is not optional: if you cannot derive the core math objects used in the paper, you are not understanding the method—you are memorizing words. \verifycite{Honerkamp2024}{2}{Sec.~III, ¶1}{POMDP}

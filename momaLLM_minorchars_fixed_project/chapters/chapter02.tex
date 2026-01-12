@@ -1,0 +1,80 @@
+
+\section{Related Work}
+\label{ch:related_work}
+
+This section is deliberately organized by \emph{design choice}, not by citation-count. The goal is to locate MoMa-LLM in a space of alternatives: representation (maps vs.\ graphs), planning (reactive vs.\ deliberative), and grounding (text-only vs.\ structured state).
+
+\subsection{LLM-grounded robotics: from language to feasible actions}
+A recurring failure mode of naive ``LLM plans'' is hallucinated actions that are physically impossible or unsafe. SayCan is an influential response: it combines language models with \emph{affordance} or feasibility scores so that language suggestions are filtered by what the robot can actually do. \verifycite{Ahn2022SayCan}{1}{Abstract, ¶1}{Do As I Can}
+
+VoxPoser extends grounding to continuous 3D manipulation by representing language-conditioned goals as \emph{value maps} that can be composed for more complex tasks. \verifycite{Huang2023VoxPoser}{1}{Abstract, ¶1}{Composable 3D Value Maps}
+
+MoMa-LLM adopts the same philosophical stance (LLM as a high-level proposer, not a low-level controller), but differs in what it supplies to the LLM: a \emph{dynamic scene graph + geometric connectivity} rather than raw text. \verifycite{Honerkamp2024}{3}{Sec.~III-B, ¶1}{scene graph}
+
+\subsection{Scene graphs and semantic mapping for mobile manipulation}
+The mapping community has a long history of using layered representations: metric maps for navigation and symbolic/semantic structures for reasoning. Hydra is a prominent real-time system for constructing and optimizing 3D scene graphs, serving as infrastructure for downstream tasks. \verifycite{Hughes2022Hydra}{1}{Title, ¶1}{Real-time Spatial Perception System}
+
+MoMa-LLM can be interpreted as a task-driven specialization: it builds a scene graph that is \emph{just rich enough} for interactive object search (rooms, doors, object candidates), while maintaining a navigation graph derived from distance-field structure (Voronoi). \verifycite{Honerkamp2024}{4}{Sec.~III-C, ¶2}{Voronoi}
+
+\subsection{Interactive object search and hierarchical policies}
+Learning-based interactive search for mobile manipulation often uses hierarchical structures: a high-level selector chooses \emph{which room} or \emph{which container} to inspect; a low-level policy executes navigation and manipulation.
+
+For example, HIMOS studies \emph{hierarchical} interactive multi-object search for mobile manipulation and emphasizes the need to reason about interactions (e.g., opening) rather than only traversing free space. \verifycite{Schmalstieg2023HIMOS}{1}{Title/Abstract, ¶1}{Interactive Multi-Object Search}
+
+MoMa-LLM shares the hierarchical flavor, but the high-level decision is produced by an LLM conditioned on the current graph state, not by a learned policy trained end-to-end for the specific environment. \verifycite{Honerkamp2024}{3}{Sec.~III-A, ¶2}{two-level policy}
+
+\subsection{Post-MoMa (and parallel) directions: LLM navigation and object search}
+Several recent papers attack similar problems (language-conditioned navigation/search), often with different representations or assumptions:
+
+\paragraph{Zero-shot object navigation with LLM priors.}
+VoroNav proposes Voronoi-based zero-shot object navigation assisted by an LLM, emphasizing geometry-aware planning combined with language priors. \verifycite{Wu2024VoroNav}{1}{Title/Abstract, ¶1}{Voronoi-based Zero-shot Object Navigation}
+
+\paragraph{Language-guided navigation with state summaries.}
+SayNav focuses on language-instructed navigation using LLM-driven reasoning over summarized state. \verifycite{Rajvanshi2024SayNav}{1}{Title, ¶1}{SayNav}
+
+\paragraph{Online scene-graph updates for navigation.}
+OrionNav highlights online updates of a scene representation during navigation and uses this structure for reasoning about goals. \verifycite{Devarakonda2024OrionNav}{1}{Title/Abstract, ¶1}{OrionNav}
+
+\paragraph{Memory and retrieval mechanisms.}
+MORE emphasizes memory (storage and retrieval) as a key ingredient for long-horizon robot behavior. \verifycite{Mohammadi2025MORE}{1}{Title/Abstract, ¶1}{Memory-Augmented}
+
+\paragraph{Semantic reasoning for concealed spaces.}
+StretchAI targets search and retrieval in \emph{dynamic and concealed spaces}, explicitly confronting the ``behind/inside'' problem that dominates household search. \verifycite{Menon2025StretchCompose}{1}{Title/Abstract, ¶1}{dynamic and concealed spaces}
+
+These works provide a useful lens for discussion: if MoMa-LLM’s main idea is \emph{structured state + LLM high-level action selection}, then later work can be categorized by what they strengthen: (i) better state estimation/memory, (ii) better exploration policies, (iii) better handling of dynamics and concealment, and (iv) more robust grounding. \verifycite{Honerkamp2024}{11}{Conclusion, ¶1}{future work}
+
+\subsection{Comparison table}
+Table~\ref{tab:related_work_compare} intentionally uses \emph{binary} columns to force clarity. If a paper only hints at a feature but does not operationalize it, it is marked as ``partial''.
+
+
+% Verification anchors for the papers listed in Tab.~\ref{tab:related_work_compare}:
+SayCan introduces language grounding via robotic affordances.\verifycite{Ahn2022SayCan}{1}{Title/Abstract, para~1}{Grounding Language in Robotic Affordances}
+VoxPoser proposes composable 3D value maps for language-conditioned manipulation.\verifycite{Huang2023VoxPoser}{1}{Title/Abstract, para~1}{Composable 3D Value Maps}
+HIMOS studies hierarchical interactive multi-object search for mobile manipulation.\verifycite{Schmalstieg2023HIMOS}{1}{Title/Abstract, para~1}{Interactive Multi-Object Search}
+VoroNav uses a Voronoi-based backbone for object navigation with language priors.\verifycite{Wu2024VoroNav}{1}{Title/Abstract, para~1}{Voronoi-based Zero-shot Object Navigation}
+SayNav targets language-instructed navigation with LLM reasoning over summarized state.\verifycite{Rajvanshi2024SayNav}{1}{Title/Abstract, para~1}{SayNav}
+OrionNav emphasizes online updates of a scene representation during navigation.\verifycite{Devarakonda2024OrionNav}{1}{Title/Abstract, para~1}{online}
+MORE argues for memory as a core module for long-horizon autonomy.\verifycite{Mohammadi2025MORE}{1}{Title/Abstract, para~1}{Memory-Augmented}
+StretchAI focuses on search and retrieval in dynamic and concealed spaces.\verifycite{Menon2025StretchCompose}{1}{Title/Abstract, para~1}{dynamic and concealed spaces}
+
+\begin{table}[htbp]
+\centering
+\small
+\begin{tabularx}{\linewidth}{lXXXXX}
+\toprule
+\textbf{Work} & \textbf{LLM used} & \textbf{Structured state} & \textbf{Interaction (open)} & \textbf{Zero-shot} & \textbf{Primary task} \\
+\midrule
+SayCan & yes & partial & yes & partial & language-to-skills \\
+VoxPoser & yes & yes (3D values) & yes & partial & manipulation \\
+HIMOS & no & partial & yes & n/a & interactive search \\
+MoMa-LLM & yes & yes (DSG+Voronoi) & yes & partial & interactive search \\
+VoroNav & yes & yes (Voronoi) & no/partial & yes & object navigation \\
+SayNav & yes & partial & no & partial & navigation \\
+OrionNav & yes & yes (online graph) & partial & partial & navigation \\
+MORE & yes & yes (memory) & partial & partial & long-horizon tasks \\
+StretchAI & yes & yes (semantics) & yes & partial & search \& retrieval \\
+\bottomrule
+\end{tabularx}
+\caption{High-level comparison of MoMa-LLM and adjacent work.}
+\label{tab:related_work_compare}
+\end{table}

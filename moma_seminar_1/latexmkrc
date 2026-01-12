@@ -1,0 +1,5 @@
+# Put all build artifacts in dist/
+$out_dir = 'dist';
+$aux_dir = 'dist';
+$pdf_mode = 1;
+$bibtex_use = 2;

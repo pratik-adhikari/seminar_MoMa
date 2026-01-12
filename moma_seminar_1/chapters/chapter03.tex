@@ -1,0 +1,62 @@
+\chapter{Paper Summary}
+\label{ch:paper_summary}
+
+In this chapter we provide a detailed summary of Honerkamp \textit{et~al.}'s MoMa‑LLM approach.  We begin by describing the problem formulation and then outline how the authors construct a dynamic scene representation.  We present the mathematical details of the room segmentation and object assignment procedures, define the high‑level action space and discuss how the scene graph is encoded into natural language prompts.  Finally, we summarise the evaluation protocol and key results.
+
+\section{Problem Formulation}
+The authors formulate \emph{semantic interactive object search} as a \gls{pomdp} \(M = (\mathcal{S}, \mathcal{A}, \mathcal{O}, T, P, r)\), where \(\mathcal{S}\) is the (continuous) state space describing the robot pose, explored map and locations of objects and doors, \(\mathcal{A}\) is a discrete set of high‑level actions, \(\mathcal{O}\) denotes observations consisting of aligned RGB‑D images, \(T(s'|s,a)\) and \(P(o|s)\) are the transition and observation models, and \(r(s,a)\) is the reward function.  The agent receives a language goal \(g\) such as “find the milk in the fridge” and must decide actions that maximise expected reward while contending with partial observability[33878035504915†L190-L200].  Unlike previous work, the agent must physically open doors and drawers to reveal objects, making the environment non‑stationary.
+
+\section{Scene Representation}
+MoMa‑LLM builds a hierarchical representation consisting of a \gls{bev} occupancy map for navigation and a semantic graph describing rooms and objects.  At each time step the robot fuses LiDAR and RGB‑D observations into a voxel map $B_t$ encoding obstacles and a free‑space map $F_t$.  From $B_t$ it constructs an Euclidean signed distance field (ESDF) that assigns to each grid cell the distance to the nearest obstacle.  The gradient of the ESDF is used to compute a \emph{generalised Voronoi diagram} (GVD), defined as the set of points with equal clearance to multiple obstacles.  The GVD yields a graph $G_V=(V,E)$ whose vertices correspond to Voronoi nodes and whose edges represent traversable corridors[33878035504915†L320-L337].  To ensure connectivity, the authors extract the largest connected component of $G_V$ and sparsify it for efficiency.
+
+\subsection{Room Segmentation via Doors}
+Rather than segmenting rooms at narrow geometric constrictions, MoMa‑LLM segments the Voronoi graph using a probabilistic model of door positions.  Let $\{x_i\}_{i=1}^{N_D}$ denote the 2D coordinates of detected door centres.  The density of doors is modelled by a kernel density estimate (KDE)
+\begin{equation}
+\label{eq:doorKDE}
+\rho_N(x, H) = \frac{1}{N_D} \sum_{i=1}^{N_D} K_H(x - x_i),
+\end{equation}
+where $K_H$ is a scaled Gaussian kernel and $H$ is the bandwidth matrix[33878035504915†L358-L375].  Edges of $G_V$ that lie within high‑probability regions of $\rho_N$ above a threshold are removed, thereby separating $G_V$ into disjoint components corresponding to rooms.  The authors choose a bandwidth of 2.0 based on manual tuning[33878035504915†L358-L376].  High‑level connectivity between rooms is computed by finding shortest paths in the original graph $G_V$ that traverse exactly two room components.
+
+\subsection{Object–Room Assignment}
+Once the rooms are established, objects detected by the perception module are assigned to rooms by minimising a distance‑weighted path.  Suppose an object $o$ was observed from viewpoint $v_p$.  Let $n_o$ and $n_{vp}$ be candidate nodes of the room graph corresponding to the object and viewpoint, respectively.  The cost of assigning $o$ to $n_o$ is defined as
+\begin{equation}
+\label{eq:roomAssignment}
+d_{v\!o} = \min_{n_o,n_{vp} \in G_V^R} \bigl( \mathrm{path}(n_o,n_{vp}) + d(o,n_o)^{\lambda} + d(v_p,n_{vp}) \bigr),
+\end{equation}
+where $\mathrm{path}(n_o,n_{vp})$ is the shortest path length between nodes on the Voronoi graph, $d(\cdot,\cdot)$ is the Euclidean distance, and $\lambda=1.3$ biases assignments toward nodes close to the object[33878035504915†L384-L402].  Each object is assigned to the room that minimises $d_{v\!o}$, preventing cross‑wall assignments.  Doors may belong to multiple adjacent rooms.
+
+\section{High‑Level Action Space}
+MoMa‑LLM defines an object‑centric high‑level action space $\mathcal{A}$ comprising five primitives[33878035504915†L410-L431]:
+\begin{itemize}
+  \item \textbf{navigate(\textit{room},\textit{object})}: navigate to the Voronoi node associated with an object in a specific room using an \gls{a-star} planner on the \gls{bev} map; success is defined as reaching within 1.5~m of the object.
+  \item \textbf{go\_to\_and\_open(\textit{room},\textit{object})}: navigate to an object and perform an open operation (for doors, the robot moves through the doorway).
+  \item \textbf{close(\textit{room},\textit{object})}: analogous to the open action but closing.
+  \item \textbf{explore(\textit{room})}: navigate to an unexplored frontier within the room; success is defined as reaching within 0.5~m of the frontier.
+  \item \textbf{done()}: terminate the episode and evaluate whether the target object has been found.
+\end{itemize}
+These primitives restrict the LLM’s outputs to feasible behaviours and decouple high‑level reasoning from low‑level control.  Ambiguities arising from multiple instances of the same object class are resolved by selecting the closest instance.
+
+\section{Grounded Language Prompting}
+At each time step the current scene graph and goal are encoded into a structured text prompt for the LLM.  The prompt lists each room, its objects and neighbouring rooms, as well as the robot’s current room and explored frontiers.  Distances and adjacency relations are discretised into qualitative descriptors via thresholding; for instance, the distance between the robot and an object is binned and mapped to adjectives such as “near”, “far” or “very far”[33878035504915†L634-L646].  The prompt also provides an action description template and instructs the LLM to output exactly one high‑level action.  By grounding the language model in an up‑to‑date graph and restricting its responses, the authors reduce hallucinated actions and improve safety.  When the LLM selects an action, a corresponding low‑level policy (navigation or manipulation controller) executes it while continuously updating the scene graph.
+
+\section{Algorithmic Overview}
+The overall MoMa‑LLM procedure is summarised in Algorithm~\ref{alg:moma}.  The agent repeatedly perceives the environment, updates its scene graph, queries the LLM for an action and executes the corresponding low‑level policy until the goal is achieved.
+
+\begin{algorithm}[t]
+\SetAlgoLined
+\caption{MoMa‑LLM High‑Level Interactive Object Search}
+\label{alg:moma}
+\KwIn{language goal $g$, initial scene graph $G_S$, perception and control modules}
+\While{goal not achieved}{
+  Acquire depth and RGB observations and update BEV map $B_t$ and free‑space map $F_t$\;
+  Compute ESDF from $B_t$ and derive Voronoi graph $G_V$; extract the largest component and sparsify\;
+  Segment $G_V$ into rooms $G_V^R$ using door KDE Eq.~\eqref{eq:doorKDE}\;
+  Assign objects to rooms via distance metric Eq.~\eqref{eq:roomAssignment}\;
+  Encode the scene graph and goal $g$ into a structured language prompt\;
+  Query the LLM with the prompt to obtain a high‑level action $a \in \mathcal{A}$\;
+  Execute the low‑level policy associated with $a$ and update $G_S$\;
+}
+\end{algorithm}
+
+\section{Evaluation and Results}
+The authors evaluate MoMa‑LLM in simulation using the iGibson2 environment and in a real‑world apartment.  They compare against a reinforcement‑learning (RL) baseline trained to follow language instructions, a hierarchical RL baseline and two ablations: an unstructured LLM that receives unorganised scene information and a variant without distance encoding.  Success rates, path length and the number of infeasible actions are reported.  Traditional metrics such as Success weighted by Path Length (SPL) summarise performance at a fixed budget but ignore the costs of interactions; therefore the authors propose an \emph{efficiency curve} that plots the fraction of episodes solved as a function of the number of low‑level steps and define its area under the curve (AUC‑E) as a summary[33878035504915†L626-L647].  A perfect policy that finds all objects in a single step achieves AUC‑E~$=1$, while a policy that never finds an object yields zero.  When calculating the efficiency curve, the authors weigh each open or close interaction as costing 30 time steps to reflect a real‑time duration of roughly 30~s[33878035504915†L1178-L1184].  Experiments demonstrate that MoMa‑LLM significantly outperforms baselines in both success rate and AUC‑E; the ablation without distances suffers more room assignment errors and requires longer paths, highlighting the importance of the distance‑weighted assignment.

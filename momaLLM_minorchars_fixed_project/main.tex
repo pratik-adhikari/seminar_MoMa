@@ -1,0 +1,171 @@
+\documentclass[12pt,oneside,a4paper]{article}
+
+%%%%%%%%%%%%%%%%%%%%%%
+%%% LaTeX packages %%%
+%%%%%%%%%%%%%%%%%%%%%%
+
+%adding packages
+\usepackage{abstract}
+\usepackage{amsfonts}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage[english]{babel}
+\usepackage{caption}
+\usepackage{chngcntr}
+\usepackage{emptypage}
+\usepackage{etoolbox}
+\usepackage{fancyhdr}
+\usepackage[T1]{fontenc}
+\usepackage{microtype}
+\usepackage[a4paper,margin=2.5cm,headheight=14pt,headsep=14pt]{geometry}
+\usepackage{graphicx}
+\usepackage{placeins}
+\graphicspath{{figures/}}
+\usepackage{hhline}
+\usepackage[hidelinks]{hyperref}
+\usepackage{xurl}
+\usepackage[utf8]{inputenc}
+\usepackage{lipsum}
+\usepackage{multirow}
+\usepackage[backend=biber,style=numeric,sorting=none,backref=true]{biblatex}
+\addbibresource{bibliography/bibliography.bib}
+% Paper shortnames used inside verification highlights (keeps brackets compact)
+\csdef{papershort@Honerkamp2024}{MoMa-LLM}
+\csdef{papershort@Ahn2022SayCan}{SayCan}
+\csdef{papershort@Huang2023VoxPoser}{VoxPoser}
+\csdef{papershort@Schmalstieg2023HIMOS}{HIMOS}
+\csdef{papershort@Wu2024VoroNav}{VoroNav}
+\csdef{papershort@Rajvanshi2024SayNav}{SayNav}
+\csdef{papershort@Devarakonda2024OrionNav}{OrionNav}
+\csdef{papershort@Mohammadi2025MORE}{MORE}
+\csdef{papershort@Menon2025StretchCompose}{StretchAI}
+\csdef{papershort@Hughes2022Hydra}{Hydra}
+\newcommand{\papershort}[1]{\ifcsdef{papershort@#1}{\csuse{papershort@#1}}{#1}}
+
+% Numeric citation + yellow verification bracket (wrapped to avoid overflow)
+\newcommand{\verifycite}[4]{%
+  \parencite{#1}%
+  \,\colorbox{yellow}{\parbox[t]{\dimexpr0.78\linewidth-2\fboxsep\relax}{\footnotesize [\papershort{#1}, p.~#2, #3, ``#4'']}}%
+}
+
+\usepackage{rotating}
+\usepackage{sectsty}
+\usepackage{setspace}
+\usepackage[separate-uncertainty = true,multi-part-units=single,per-mode=symbol]{siunitx}
+\usepackage[format=hang]{subcaption}
+\usepackage{tabto}
+\usepackage[absolute]{textpos}
+\usepackage{tikz}
+\usepackage{titling}
+\usepackage{titlesec}
+\usepackage{xcolor}
+\usepackage{lineno} % Package to add line numbers
+
+% Tables
+\usepackage{tabularx}
+\usepackage{longtable}
+\usepackage{booktabs} % lines for tables
+\usepackage{hhline}
+\usepackage{multirow} % multiple rows per column in tables
+
+% Pseudo code
+\usepackage[ruled, linesnumbered, vlined, noend]{algorithm2e} 
+\usepackage[noend]{algpseudocode} 
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% LaTeX settings and macros %%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%% Tabularx setting
+\newcolumntype{Y}{>{\centering\arraybackslash}X}% new Y, equal sized as X but centered
+\renewcommand\tabularxcolumn[1]{m{#1}}% for vertical centering text in X column
+\setlength\extrarowheight{1pt}
+
+% Pseudo code
+\newcommand\mycommfont[1]{\footnotesize\ttfamily\textcolor{blue}{#1}}
+\SetCommentSty{mycommfont}
+
+%% Key definitions for text elements. USE THEM
+
+% Verified citation helper: include page + section + an anchor phrase to make manual verification easy
+
+
+\def\secref#1{Sec.~\ref{#1}}
+\def\figref#1{Fig.~\ref{#1}}
+\def\subfigref#1{\subref{#1})}
+\def\subfigrefenclosed#1{(\subref{#1})}
+\def\tabref#1{Tab.~\ref{#1}}
+\def\subtabref#1{\subref{#1})}
+\def\subtabrefenclosed#1{(\subref{#1})}
+\def\eqref#1{Eq.~(\ref{#1})}
+\def\algref#1{Alg.~\ref{#1}}
+\def\alglineref#1{line~\ref{#1}}
+\algnewcommand{\algorithmicgoto}{\textbf{go to}}%
+\algnewcommand{\Goto}[1]{\algorithmicgoto~line~\ref{#1}}%
+
+% Some math definition
+\def\argmax{\mathop{\rm argmax}}
+\def\argmin{\mathop{\rm argmin}}
+\newcommand{\bigO}[1]{$\mathcal{O}(#1)$}
+\newcommand{\R}{\mathbb{R}}
+\DeclareSIUnit\GB{GB}
+
+% Other useful macros
+\newcommand\todo[1]{\textcolor{red}{#1}}
+\newcommand\etal{\emph{et al.}}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Course and student information %%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\setlength{\emergencystretch}{2em}
+\sloppy
+\begin{document}
+\linespread{1.08}\selectfont
+
+% ---- Title page (matches WT/ST seminar template) ----
+\begin{titlepage}
+\centering
+{\Large Project Group/Seminar/Lab\par}
+\vspace{0.2cm}
+{\Large WT/ST 2025\par}
+\vspace{0.8cm}
+{\LARGE\bfseries Language-Grounded Dynamic Scene Graphs for Interactive Object Search with Mobile Manipulation\par}
+\vspace{0.4cm}
+{\Large (Critical Analysis Report on MoMa-LLM)\par}
+\vspace{1.2cm}
+{\Large Pratik Adhikari\par}
+\vspace{0.2cm}
+{\large Matriculation No: 9046973\par}
+\vspace{0.2cm}
+{\large Supervisor: Rohit Menon\par}
+\vfill
+{\large December 26, 2025\par}
+\end{titlepage}
+
+\begin{abstract}
+\input{components/abstract.tex}
+\end{abstract}
+
+\tableofcontents
+\newpage
+% \listoffigures (removed to keep report within page limit)
+% \listoftables (removed to keep report within page limit)
+\newpage
+
+\input{chapters/chapter01.tex}
+\newpage
+\input{chapters/chapter02.tex}
+\newpage
+\input{chapters/chapter03.tex}
+\newpage
+\input{chapters/chapter04.tex}
+\newpage
+\input{chapters/chapter05.tex}
+
+\newpage
+\input{components/appendix.tex}
+
+\newpage
+\printbibliography
+\end{document}

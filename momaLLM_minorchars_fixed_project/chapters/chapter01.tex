@@ -1,0 +1,43 @@
+
+\section{Introduction}
+\label{ch:introduction}
+
+\subsection{Intention and how to read this document}
+This report is a \emph{technical} and \emph{verification-friendly} walkthrough of the MoMa-LLM paper by Honerkamp et al.\ It is written with two simultaneous goals:
+
+\begin{itemize}
+    \item \textbf{Engineering comprehension:} explain what the system does (representations, modules, interfaces, failure modes) well enough that a robotics engineer could re-implement a simplified version.
+    \item \textbf{Research positioning:} state precisely what MoMa-LLM contributes relative to work \emph{before} it, and how later papers extend or deviate from the same design space.
+\end{itemize}
+
+To force traceability, we attach a \emph{highlighted verification box} to each citation. The box states the \textbf{page}, an approximate \textbf{paragraph index}, and a short \textbf{anchor phrase} that should be visible on that page. Example: \colorbox{yellow}{\footnotesize[p.~2, ¶1; ``POMDP'']}.
+
+The main body follows the seminar template: \emph{Introduction}, \emph{Related Work}, \emph{Paper Summary}, \emph{Discussion}, \emph{Conclusion}. A large appendix provides a \emph{self-contained math derivation} for the core constructs used in MoMa-LLM (POMDP, distance fields, Voronoi graphs, KDE for door inference, and evaluation metrics). \verifycite{Honerkamp2024}{1}{Abstract, ¶1}{Language Grounded Dynamic Scene Graphs}
+
+\subsection[Problem setting: interactive object search for mobile manipulation]{Problem setting: interactive object search for mobile\\manipulation}
+Interactive object search differs from ``go-to-a-visible-goal'' navigation: the robot must \emph{actively gather information} (open doors, move to viewpoints) while simultaneously planning navigation and manipulation. Formally, the target object location is initially uncertain and becomes known only through exploration and interaction. MoMa-LLM explicitly frames the task as a \emph{partially observable} sequential decision problem. \verifycite{Honerkamp2024}{2}{Sec.~III, ¶1}{POMDP}
+
+In household environments, the search space is structured by \emph{rooms} and \emph{connectivity through doors}; many objects are \emph{occluded} or \emph{inside containers}. This pushes the robot beyond purely geometric mapping toward representations that connect geometry (free space, traversability) and semantics (rooms, objects, affordances). \verifycite{Honerkamp2024}{1}{Abstract, ¶1}{Interactive object search}
+
+\subsection{Why MoMa-LLM matters}
+Before MoMa-LLM, two lines of work were developing rapidly:
+(i) LLM-centric planning (language-to-actions, tool selection, affordance grounding), and
+(ii) geometric/semantic mapping for navigation and manipulation.
+
+LLM-based robotics systems such as SayCan emphasize \emph{grounding} language in feasible action choices (rather than treating the LLM as an oracle). \verifycite{Ahn2022SayCan}{1}{Title/Abstract, ¶1}{Grounding Language in Robotic Affordances}
+In manipulation, VoxPoser demonstrates that language can be tied to \emph{composable value maps} in 3D. \verifycite{Huang2023VoxPoser}{1}{Title, ¶1}{Composable 3D Value Maps}
+
+In mapping, systems like Hydra focus on building and optimizing \emph{3D scene graphs} in real time, enabling downstream reasoning. \verifycite{Hughes2022Hydra}{1}{Title, ¶1}{3D Scene Graph Construction}
+MoMa-LLM is interesting because it explicitly tries to \emph{close the loop} for object search: it maintains a dynamic scene graph, uses an LLM to propose high-level actions conditioned on that structured state, and executes low-level navigation/manipulation policies to gather new evidence and update the graph. \verifycite{Honerkamp2024}{1}{Abstract, ¶1}{constructs a two-level policy}
+
+\subsection{What you should be able to answer after reading}
+If you cannot answer these, you did not read carefully (and you should not pretend you did):
+
+\begin{enumerate}
+    \item What are the \emph{state variables} MoMa-LLM maintains, and what is observed vs.\ latent?
+    \item What is the exact role of the \emph{Voronoi graph} in the system (why not a standard nav graph)?
+    \item How are \emph{rooms} inferred from geometry (doors), and how are objects assigned to rooms?
+    \item What is the MoMa-LLM \emph{high-level action space}, and how does it connect to low-level skills?
+    \item How is success measured? What does \emph{AUC-E} capture that SPL does not?
+\end{enumerate}
+Each of these is answered in \secref{ch:paper_summary} and derived in \secref{app:math_walkthrough}. \verifycite{Honerkamp2024}{6}{Sec.~V, ¶2}{AUC-E}

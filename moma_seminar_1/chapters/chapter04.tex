@@ -1,0 +1,22 @@
+\chapter{Discussion}
+\label{ch:discussion}
+
+The MoMa‑LLM framework represents a significant step toward language‑guided mobile manipulation in unknown environments.  By combining a dynamic scene graph with a structured action space and a grounded large language model, the authors demonstrate successful interactive object search and manipulation.  In this discussion we evaluate the contributions of the paper, highlight its strengths and point out several limitations and avenues for future research.
+
+\section{Strengths and Contributions}
+\paragraph{Structured grounding reduces hallucinations.}  A key insight of MoMa‑LLM is that LLMs benefit from explicit grounding in a structured representation.  By constraining the action space to a small set of high‑level primitives and encoding only relevant rooms, objects and distances, the LLM produces fewer infeasible commands compared to unstructured prompts.  The distance‑weighted room assignment further ensures that the robot navigates through the correct door rather than driving into walls.  These design choices translate into higher success rates and efficiency as evidenced by the reported AUC‑E scores[33878035504915†L626-L647].
+
+\paragraph{Integration of navigation and manipulation.}  Unlike prior work that treats exploration and interaction separately, MoMa‑LLM operates within a \gls{pomdp} framework that couples mapping, room segmentation and object manipulation.  The hierarchical scene graph allows the planner to reason at multiple granularities (rooms and objects), and the high‑level actions interleave navigation, opening/closing and exploration.  This integrated perspective enables the robot to find hidden objects that require opening drawers or cabinets, a capability missing in many language‑guided navigation methods.
+
+\paragraph{Clear evaluation and new metric.}  The authors recognise that existing metrics such as SPL depend on arbitrary budgets and neglect interaction costs.  Their proposed efficiency curve and AUC‑E capture performance across a range of budgets and emphasise the time cost of opening or closing objects[33878035504915†L626-L647].  Reporting both simulation and real‑world experiments further strengthens the validity of the results.
+
+\section{Limitations and Future Work}
+\paragraph{Reliance on accurate perception.}  The system assumes access to reliable open‑vocabulary object detection, semantic segmentation of rooms and precise pose estimation.  In practice, perceptual errors and occlusions can degrade the quality of the scene graph.  Future work could incorporate probabilistic representations and uncertainty propagation to make the planner robust to perception noise.  Additionally, the door KDE requires manually chosen bandwidth and threshold parameters, which may not generalise to new environments.
+
+\paragraph{LLM reasoning remains opaque.}  While grounding the language model reduces hallucinations, the LLM is still treated as a black‑box planner.  It is difficult to guarantee that the LLM will always select safe and efficient actions, especially when presented with unseen scenarios.  Recent work on verifiable planning and neuro‑symbolic reasoning could be integrated to provide formal guarantees.  Alternatively, the LLM could be trained or fine‑tuned with demonstrations to bias it toward desirable behaviours.
+
+\paragraph{Scalability and computational cost.}  Constructing ESDFs and Voronoi diagrams at every time step can be computationally expensive, particularly in large environments.  Sparsification mitigates some of this cost, but maintaining a high‑fidelity map and scene graph may not scale to multi‑floor buildings.  Moreover, each LLM query incurs latency and requires internet connectivity (for hosted models).  Exploring lightweight language models or localised planning heuristics might alleviate these issues.
+
+\paragraph{Limited generalisation.}  The evaluation focuses on indoor household environments with a relatively small set of rooms and objects.  Although the system demonstrates impressive performance in this domain, its applicability to outdoor environments, cluttered warehouses or industrial settings remains unclear.  Extending the scene representation to incorporate 3D geometry, dynamics and affordances could broaden its applicability.
+
+In summary, MoMa‑LLM effectively integrates scene graph reasoning with language‑driven planning to achieve interactive object search.  Addressing the limitations identified above will be crucial for deploying such systems in real‑world applications at scale.

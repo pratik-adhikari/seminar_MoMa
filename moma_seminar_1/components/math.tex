@@ -1,0 +1,190 @@
+% ---- math.tex ----
+% Detailed mathematical walk-through of MoMa-LLM (Honerkamp et al., 2024)
+
+\section{Mathematical walk-through of the MoMa-LLM pipeline}
+\label{app:math_walkthrough}
+
+This section expands the mathematical objects that MoMa-LLM manipulates throughout an episode.
+Whenever the paper provides an explicit equation, we adopt the same symbols and parameters.
+For intermediate quantities (e.g., ESDF and Voronoi skeleton extraction) we use standard robotics / computational-geometry definitions, because the paper references these constructs but does not re-derive them in full.
+All paper-specific claims should be interpreted in conjunction with \cite{Honerkamp2024}.
+
+\subsection{Task model: POMDP and decision rule}
+MoMa-LLM frames interactive object search as a partially observable Markov decision process (POMDP)
+\begin{equation}
+M = (\mathcal{S}, \mathcal{A}, \mathcal{O}, T, P, r),
+\end{equation}
+with continuous state $s_t\in\mathcal{S}$ and discrete high-level actions $a_t\in\mathcal{A}$.
+The agent receives observations $o_t\in\mathcal{O}$ (aligned RGB-D, LiDAR, etc.) and a language goal $g$.
+A policy $\pi$ selects a high-level action given the belief (or, in practice, a compact state summary extracted from the scene graph):
+\begin{equation}
+a_t \sim \pi(\cdot \mid b_t, g), \qquad b_t(s) \equiv p(s_t=s \mid o_{1:t}, a_{1:t-1}, g).
+\end{equation}
+In MoMa-LLM, the belief $b_t$ is not represented explicitly; instead, a dynamically updated scene graph acts as a structured, grounded summary that is serialized into a language prompt.
+
+\subsection{Maps and distance fields}
+Let $\Omega\subset\mathbb{R}^2$ denote the planar workspace discretized into a grid (BEV map).
+Let $B_t:\Omega\to\{0,1\}$ be an occupancy indicator at time $t$ where $B_t(x)=1$ marks occupied (obstacle) cells and $B_t(x)=0$ marks free / unknown cells.
+Let $\mathcal{O}_t \subset \Omega$ be the set of occupied cells $\{x\in\Omega \mid B_t(x)=1\}$.
+
+The Euclidean signed distance field (ESDF) $\phi_t:\Omega\to\mathbb{R}$ is commonly defined as
+\begin{equation}
+\phi_t(x) =
+\begin{cases}
++\min\limits_{y\in\mathcal{O}_t}\ \lVert x-y\rVert_2, & x\notin\mathcal{O}_t,\\[4pt]
+-\min\limits_{y\in\Omega\setminus\mathcal{O}_t}\ \lVert x-y\rVert_2, & x\in\mathcal{O}_t.
+\end{cases}
+\end{equation}
+MoMa-LLM uses clearance information to reason about navigable corridors; in that case one may work with the unsigned distance field $d_t(x)=\max(\phi_t(x),0)$.
+Gradients $\nabla d_t(x)$ (approximated by finite differences on the grid) are useful to detect ridges that form the Voronoi skeleton.
+
+\subsection{Generalized Voronoi diagram (GVD) from distance fields}
+Intuitively, the generalized Voronoi diagram is the set of points that are (locally) equidistant to at least two distinct obstacle boundaries.
+One standard definition uses distance-to-obstacle functions.
+Let obstacles be indexed by $i\in\{1,\dots,m\}$ and let $d_i(x)$ denote the Euclidean distance from $x$ to obstacle $i$.
+Then the GVD is the set
+\begin{equation}
+\mathrm{GVD} \;=\; \Bigl\{x\in\Omega \ \Big|\ \exists\, i\neq j:\ d_i(x)=d_j(x)\le d_k(x)\ \forall k,\ \text{and}\ \nabla d_i(x)\neq \nabla d_j(x)\Bigr\}.
+\end{equation}
+The gradient inequality excludes degenerate cases where two distances are equal but correspond to the same boundary direction (e.g., along a flat wall).
+In practice, on a grid, one approximates the skeleton by detecting ridge points in $d_t(x)$ (or $\phi_t(x)$), then extracting a graph.
+
+\paragraph{Graph extraction (conceptual).}
+Let $\mathcal{V}_t\subset\Omega$ be the set of grid cells classified as Voronoi-skeleton points.
+A common graph extraction creates vertices $V$ at junctions and endpoints and edges $E$ as chains of skeleton points between vertices:
+\begin{align}
+V &= \{x\in\mathcal{V}_t \mid \deg_{\mathcal{V}_t}(x)\neq 2\},\\
+E &= \{(u,v)\mid u,v\in V,\ \text{connected by a simple path in }\mathcal{V}_t\}.
+\end{align}
+MoMa-LLM then keeps the largest connected component for robustness and sparsifies the graph to reduce computational load \cite{Honerkamp2024}.
+
+\subsection{Door-based room segmentation via KDE}
+Let $\{x_i\}_{i=1}^{N_D}$ be the 2D positions of detected doors (door centers).
+The supplementary defines a kernel density estimate
+\begin{equation}
+\rho_N(x,H) = \frac{1}{N_D}\sum_{i=1}^{N_D} K_H(x-x_i),
+\label{eq:kde_repeat}
+\end{equation}
+where $H$ is the bandwidth matrix and $K_H(\cdot)$ a Gaussian kernel.
+A standard Gaussian KDE uses
+\begin{equation}
+K_H(u) = |H|^{-\frac12} K(H^{-\frac12}u),
+\qquad
+K(z)=\frac{1}{2\pi}\exp\!\Bigl(-\frac12 z^\top z\Bigr).
+\end{equation}
+The paper reports using an isotropic bandwidth and a manually selected bandwidth value \cite{Honerkamp2024}.
+
+\paragraph{Edge cutting rule (formalization).}
+The supplementary explains that graph edges which lie in ``high-probability'' door regions are removed to split the Voronoi graph into rooms.
+A precise implementation can be described by sampling points along each edge $e=(u,v)\in E$:
+\begin{equation}
+x_e(\alpha) = (1-\alpha)u + \alpha v,\qquad \alpha\in[0,1],
+\end{equation}
+and removing the edge if the maximum (or average) door density along the edge exceeds a threshold $\tau$:
+\begin{equation}
+e\ \text{removed} \iff \max_{\alpha\in[0,1]} \rho_N(x_e(\alpha),H) \ge \tau.
+\end{equation}
+After edge removal, the remaining graph splits into connected components; each component is treated as a room-level free-space skeleton.
+
+\subsection{Room adjacency and connectivity}
+Let the post-cut graph be $G_V^R=(V^R,E^R)$ and let $\mathcal{C}=\{C_1,\dots,C_R\}$ be its connected components.
+Each component $C_r$ corresponds to a room.
+MoMa-LLM constructs a room adjacency graph by checking whether there exists a path in the original (pre-cut) Voronoi graph that connects two components while crossing a door region once (concept described in the paper).
+A useful formalization is:
+\begin{equation}
+\mathrm{adj}(C_i,C_j)=1 \iff \exists\, u\in C_i, v\in C_j:\ \text{a shortest path } \mathcal{P}(u,v) \text{ in }G_V\text{ intersects exactly one cut region}.
+\end{equation}
+
+\subsection{Object-to-room assignment as a path-regularized cost}
+Suppose an object instance $o$ is detected and localized in the map, and let $v_p$ denote the viewpoint from which it was observed.
+Let $G_V^R$ be the room-segmented Voronoi graph with nodes in the navigable free space.
+The paper defines an assignment cost of the form
+\begin{equation}
+d_{v o} = \min_{n_o,n_{v_p}\in G_V^R}
+\Bigl(
+\mathrm{path}(n_o,n_{v_p}) + d(o,n_o)^\lambda + d(v_p,n_{v_p})
+\Bigr),
+\label{eq:assign_repeat}
+\end{equation}
+with $\lambda=1.3$ \cite{Honerkamp2024}.
+Here:
+\begin{itemize}
+  \item $d(o,n_o)=\lVert o-n_o\rVert_2$ penalizes choosing a skeleton node far from the object location;
+  \item $d(v_p,n_{v_p})=\lVert v_p-n_{v_p}\rVert_2$ penalizes choosing a viewpoint node far from the observation pose;
+  \item $\mathrm{path}(n_o,n_{v_p})$ is the shortest-path distance along the skeleton graph.
+\end{itemize}
+Writing $\mathcal{P}(n_o,n_{v_p})$ for the set of edges on the shortest path, a standard definition is
+\begin{equation}
+\mathrm{path}(n_o,n_{v_p}) = \sum_{(u,v)\in \mathcal{P}(n_o,n_{v_p})} \lVert u-v\rVert_2.
+\end{equation}
+
+\paragraph{Why $\lambda>1$ helps.}
+Raising $d(o,n_o)$ to $\lambda>1$ makes the cost grow superlinearly with Euclidean object--node mismatch.
+This discourages ``shortcut'' assignments that connect an object to a node on the wrong side of a wall (which can be close in Euclidean distance but far in graph distance).
+In effect, the optimizer prefers nodes that are both topologically reachable and geometrically plausible.
+
+\subsection{High-level actions and cost accounting}
+High-level actions belong to a discrete set $\mathcal{A}$ (navigate, open, close, explore, done) and are executed by low-level controllers.
+Evaluation uses a cost measured in (weighted) low-level steps.
+Let $c_t$ be the cost of the $t$-th executed primitive.
+For navigation, $c_t$ is the number of low-level steps taken by the navigation stack.
+For interaction actions (open/close), the supplementary reports a weighting factor of $30$ to reflect the longer wall-clock duration of interactions \cite{Honerkamp2024}.
+A simple cost model is
+\begin{equation}
+c_t =
+\begin{cases}
+\#\text{low-level steps during navigation}, & a_t \in \{\texttt{navigate},\texttt{explore}\},\\
+30, & a_t \in \{\texttt{open},\texttt{close}\}\ \text{(counted as a fixed interaction cost)}.
+\end{cases}
+\end{equation}
+The accumulated budget after $T$ primitives is $C_T=\sum_{t=1}^T c_t$.
+
+\subsection{Efficiency curve and AUC-E}
+Let there be $N$ evaluation episodes.
+Define an indicator for episode $i$ being solved within weighted budget $b$:
+\begin{equation}
+\mathbb{I}_i(b) =
+\begin{cases}
+1, & \text{if episode } i \text{ succeeds with total cost } \le b,\\
+0, & \text{otherwise.}
+\end{cases}
+\end{equation}
+The efficiency curve is the success fraction as a function of budget:
+\begin{equation}
+E(b)=\frac{1}{N}\sum_{i=1}^N \mathbb{I}_i(b).
+\end{equation}
+The paper summarizes the full curve by the area under $E(b)$ up to $B_{\max}$ (reported as 5000 low-level steps) \cite{Honerkamp2024}.
+To obtain a value in $[0,1]$ consistent with the text (perfect policy $\to 1$), one can normalize:
+\begin{equation}
+\mathrm{AUC\text{-}E} = \frac{1}{B_{\max}}\int_0^{B_{\max}} E(b)\, db.
+\end{equation}
+In a discrete evaluation, a practical approximation is
+\begin{equation}
+\mathrm{AUC\text{-}E} \approx \frac{1}{B_{\max}}\sum_{b=0}^{B_{\max}-1} E(b).
+\end{equation}
+
+\subsection{Distance-to-language encoding as a piecewise map}
+The supplementary discretizes continuous distances to a small token set (Tab.~S.2, reproduced in Appendix~\ref{app:appendix}).
+We can view this as a piecewise-constant encoding function $f:\mathbb{R}_{\ge 0}\to\mathcal{T}$:
+\begin{equation}
+f(d)=
+\begin{cases}
+\texttt{veryclose}, & d\le 3,\\
+\texttt{near}, & 3<d\le 10,\\
+\texttt{far}, & 10<d\le 20,\\
+\texttt{distant}, & d>20.
+\end{cases}
+\end{equation}
+
+\subsection{End-to-end step-by-step: from sensors to action}
+Putting the above pieces together, one MoMa-LLM decision cycle can be decomposed as:
+\begin{enumerate}
+  \item \textbf{Perception $\to$ maps:} fuse sensor data into $B_t$ (occupancy) and derive $d_t$ (ESDF clearance).
+  \item \textbf{ESDF $\to$ skeleton:} extract GVD ridge points and build a skeleton graph $G_V=(V,E)$.
+  \item \textbf{Doors $\to$ room cuts:} estimate door density $\rho_N$ via Eq.~\eqref{eq:kde_repeat}; remove edges using a threshold rule to obtain room components $\{C_r\}$.
+  \item \textbf{Objects $\to$ rooms:} for each detected object $o$, compute assignment costs via Eq.~\eqref{eq:assign_repeat} and attach $o$ to the minimizing component.
+  \item \textbf{Graph $\to$ prompt:} serialize the current rooms, objects, adjacencies, and binned distances $f(d)$ into a structured prompt; list allowable actions.
+  \item \textbf{Prompt $\to$ action:} query the LLM to choose one high-level action $a_t\in\mathcal{A}$.
+  \item \textbf{Action $\to$ execution:} run the corresponding low-level controller; update maps and graph and accumulate cost $c_t$.
+\end{enumerate}
+

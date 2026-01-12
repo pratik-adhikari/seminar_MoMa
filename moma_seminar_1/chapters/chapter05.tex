@@ -1,0 +1,8 @@
+\chapter{Conclusion}
+\label{ch:conclusion}
+
+This seminar report analysed the MoMa‑LLM system for language‑grounded interactive object search with mobile manipulation.  We described how the authors formulate the task as a \gls{pomdp}, construct a dynamic two‑level scene graph using Voronoi diagrams and a door‑based kernel density estimator, assign objects to rooms via a distance‑weighted cost and define a concise high‑level action space.  We examined the structured language prompts that ground a large language model in this scene representation and summarised the evaluation using a new efficiency curve metric.
+
+The key contribution of MoMa‑LLM lies in its tight coupling of perception, mapping, language understanding and control.  By embedding an LLM within a principled representation of the world, the system achieves higher success rates and search efficiency than reinforcement learning baselines and unstructured prompting.  At the same time, the method relies on accurate perception, manual parameter choices and black‑box reasoning.  Addressing these limitations—through robust perceptual models, verifiable planning and more scalable graph abstractions—presents an exciting avenue for future research.
+
+Overall, MoMa‑LLM demonstrates the potential of combining dynamic scene graphs with large language models to enable robots to perform complex tasks in unexplored environments.  The insights gained from this work will be valuable for advancing mobile manipulation toward real‑world deployment.
