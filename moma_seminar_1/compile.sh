@@ -17,7 +17,7 @@ docker run --rm \
     -v $(pwd):/document/:z \
     -v $(realpath $LATEX_COMMON):/latex-common/:z \
     $IMAGENAME:$TAG \
-    /bin/sh -c 'cp /latex-common/*.cls /document/ && latexmk -pdf -interaction=nonstopmode && latexmk -c && rm -f /document/*.cls'
+    /bin/sh -c 'cp /latex-common/*.cls /document/ && latexmk -pdf -interaction=nonstopmode && (biber dist/main || (cat dist/main.blg && exit 1)) && makeglossaries -d dist main || true && latexmk -pdf -interaction=nonstopmode && latexmk -c && rm -f /document/*.cls'
 
 echo ""
 echo "Compilation complete! Opening PDF..."

@@ -4,23 +4,27 @@ This repository contains research work including seminar papers, shared LaTeX bu
 
 ## Structure
 
-```
 research/
 ├── latex-common/           # Shared Docker build infrastructure
 │   ├── Dockerfile
 │   ├── .latexmkrc
 │   └── syssec-*.cls       # LaTeX class files
 │
-├── moma_seminar/          # MoMa Seminar: Language-Grounded Scene Understanding
+├── moma_seminar_1/        # [NEW] Active MoMa Seminar Project
 │   ├── main.tex
 │   ├── chapters/
 │   ├── components/
 │   ├── bibliography/
-│   └── README.md          # Detailed seminar documentation
+│   └── compile.sh         # Build script
+│
+├── momaLLM_minorchars_fixed_project/ # [NEW] MoMa LLM Project
+│   ├── main.tex
+│   ├── compile.sh         # Build script
+│   └── ...
 │
 └── templates/             # LaTeX templates
     └── syssec-thesis-template/
-```
+
 
 ## Projects
 
