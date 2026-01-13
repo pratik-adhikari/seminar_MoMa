@@ -13,30 +13,26 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v3
 
+      - name: Prepare Dependencies
+        run: |
+          cp latex-common/*.cls moma_seminar/
+          cp latex-common/*.cls moma_analysis_report/
+
       - name: Compile MoMa Seminar
         uses: xu-cheng/latex-action@v3
         with:
           root_file: main.tex
           working_directory: moma_seminar
-          # Copy class files from latex-common before building
-          pre_compile: |
-            cp ../latex-common/*.cls .
-            # Install any missing dependencies if needed (though texlive-full is usually huge)
           post_compile: |
             latexmk -c
             rm -f *.cls
-          # Explicitly enable shell escape and ensure glossary/biber support via latexmk
-          latexmk_use_xelatex: false
           latexmk_shell_escape: true
-          # The action automatically runs latexmk which handles biber/glossaries if configured in latexmkrc
 
       - name: Compile Critical Analysis Report
         uses: xu-cheng/latex-action@v3
         with:
           root_file: main.tex
           working_directory: moma_analysis_report
-          pre_compile: |
-            cp ../latex-common/*.cls .
           post_compile: |
             latexmk -c
             rm -f *.cls
