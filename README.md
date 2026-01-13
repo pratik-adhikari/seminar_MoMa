@@ -1,28 +1,39 @@
 # Research Projects
-[![Build LaTeX Documents](https://github.com/pratik-adhikari/seminar_MoMa/actions/workflows/build_latex.yml/badge.svg)](https://github.com/pratik-adhikari/seminar_MoMa/actions/workflows/build_latex.yml)
+[![Build and Release PDFs](https://github.com/pratik-adhikari/seminar_MoMa/actions/workflows/publish_pdf.yml/badge.svg)](https://github.com/pratik-adhikari/seminar_MoMa/actions/workflows/publish_pdf.yml)
 
 
 This repository contains research work including seminar papers, shared LaTeX build infrastructure, and templates.
 
-## Structure
+## Directory Structure
 
-research/
-├── latex-common/           # Shared Docker build infrastructure
-│   ├── Dockerfile
-│   ├── .latexmkrc
-│   └── syssec-*.cls       # LaTeX class files
-│
-├── moma_seminar_1/        # [NEW] Active MoMa Seminar Project
-│   ├── main.tex
-│   ├── chapters/
-│   ├── components/
-│   ├── bibliography/
-│   └── compile.sh         # Build script
-│
-├── momaLLM_minorchars_fixed_project/ # [NEW] MoMa LLM Project
-│   ├── main.tex
-│   ├── compile.sh         # Build script
-│   └── ...
+- **`moma_seminar/`**: The primary seminar paper (previously `moma_seminar_1`).
+- **`momaLLM_minorchars_fixed_project/`**: Related LLM research project.
+- **`latex-common/`**: Shared Docker infrastructure (`Dockerfile` with `texlive-full`).
+- **`templates/`**: LaTeX templates.
+
+## Building Projects
+
+We use a shared Docker container to build all LaTeX projects.
+
+### Prerequisites
+
+*   Docker installed.
+
+### How to Build
+
+Navigate to the project directory and run `compile.sh`:
+
+**For MoMa Seminar:**
+```bash
+cd moma_seminar
+./compile.sh
+```
+
+**For MoMa LLM Project:**
+```bash
+cd momaLLM_minorchars_fixed_project
+./compile.sh
+```
 │
 └── templates/             # LaTeX templates
     └── syssec-thesis-template/
