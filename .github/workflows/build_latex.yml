@@ -1,45 +1,41 @@
-name: Build LaTeX Documents
+name: Build LaTeX
 
-on:
-  push:
-    branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
+on: [push]
 
 jobs:
-  build:
+  build_latex:
     runs-on: ubuntu-latest
-    
     steps:
-    - uses: actions/checkout@v3
+      - name: Checkout
+        uses: actions/checkout@v3
 
-    - name: Debug - List Files
-      run: ls -R
+      - name: List files (Debug)
+        run: ls -R
 
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v2
+      # Use the pre-existing logic but simplified
+      - name: Setup Docker Buildx
+        uses: docker/setup-buildx-action@v2
 
-    - name: Build Docker Image
-      run: |
-        docker build -t research/tex-builder:latest -f latex-common/Dockerfile latex-common
+      - name: Build Container
+        run: docker build -t research/tex-builder:latest -f latex-common/Dockerfile latex-common
 
-    - name: Compile MoMa Seminar 1
-      run: |
-        cd moma_seminar_1
-        # Ensure scripts are executable
-        chmod +x compile.sh
-        ./compile.sh
+      - name: Build Seminar 1
+        run: |
+          chmod +x moma_seminar_1/compile.sh
+          cd moma_seminar_1
+          ./compile.sh
 
-    - name: Compile MoMa LLM Project
-      run: |
-        cd momaLLM_minorchars_fixed_project
-        chmod +x compile.sh
-        ./compile.sh
+      - name: Build LLM Project
+        run: |
+          chmod +x momaLLM_minorchars_fixed_project/compile.sh
+          cd momaLLM_minorchars_fixed_project
+          ./compile.sh
 
-    - name: Upload PDFs
-      uses: actions/upload-artifact@v4
-      with:
-        name: Research-Papers-PDFs
-        path: |
-          moma_seminar_1/dist/main.pdf
-          momaLLM_minorchars_fixed_project/dist/main.pdf
+      - name: Upload PDFs
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: research-pdfs
+          path: |
+            moma_seminar_1/dist/main.pdf
+            momaLLM_minorchars_fixed_project/dist/main.pdf
