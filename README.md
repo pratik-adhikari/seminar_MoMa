@@ -1,4 +1,6 @@
 # Research Projects
+[![Build LaTeX Documents](https://github.com/pratik-adhikari/seminar_MoMa/actions/workflows/build_latex.yml/badge.svg)](https://github.com/pratik-adhikari/seminar_MoMa/actions/workflows/build_latex.yml)
+
 
 This repository contains research work including seminar papers, shared LaTeX build infrastructure, and templates.
 
