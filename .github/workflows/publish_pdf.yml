@@ -1,0 +1,46 @@
+name: Build and Release PDFs
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build_pdf:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v3
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v2
+
+    - name: Build Docker Image
+      run: |
+        docker build -t research/tex-builder:latest -f latex-common/Dockerfile latex-common
+
+    - name: Compile MoMa Seminar
+      run: |
+        cd moma_seminar
+        chmod +x compile.sh
+        ./compile.sh
+
+    - name: Compile MoMa LLM Project
+      run: |
+        # Only build if directory exists
+        if [ -d "momaLLM_minorchars_fixed_project" ]; then
+          cd momaLLM_minorchars_fixed_project
+          chmod +x compile.sh
+          ./compile.sh
+        fi
+
+    - name: Upload PDFs
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: research-papers
+        path: |
+          moma_seminar/dist/main.pdf
+          momaLLM_minorchars_fixed_project/dist/main.pdf
