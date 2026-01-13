@@ -29,12 +29,9 @@ jobs:
 
     - name: Compile MoMa LLM Project
       run: |
-        # Only build if directory exists
-        if [ -d "momaLLM_minorchars_fixed_project" ]; then
-          cd momaLLM_minorchars_fixed_project
-          chmod +x compile.sh
-          ./compile.sh
-        fi
+        cd moma_analysis_report
+        chmod +x compile.sh
+        ./compile.sh
 
     - name: Upload PDFs
       uses: actions/upload-artifact@v3
@@ -43,4 +40,4 @@ jobs:
         name: research-papers
         path: |
           moma_seminar/dist/main.pdf
-          momaLLM_minorchars_fixed_project/dist/main.pdf
+          moma_analysis_report/dist/main.pdf

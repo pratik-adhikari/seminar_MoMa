@@ -6,8 +6,8 @@ This repository contains research work including seminar papers, shared LaTeX bu
 
 ## Directory Structure
 
-- **`moma_seminar/`**: The primary seminar paper (previously `moma_seminar_1`).
-- **`momaLLM_minorchars_fixed_project/`**: Related LLM research project.
+- **`moma_seminar/`**: The primary seminar paper.
+- **`moma_analysis_report/`**: Critical Analysis Report on MoMa-LLM.
 - **`latex-common/`**: Shared Docker infrastructure (`Dockerfile` with `texlive-full`).
 - **`templates/`**: LaTeX templates.
 
@@ -29,9 +29,9 @@ cd moma_seminar
 ./compile.sh
 ```
 
-**For MoMa LLM Project:**
+**For Critical Analysis Report:**
 ```bash
-cd momaLLM_minorchars_fixed_project
+cd moma_analysis_report
 ./compile.sh
 ```
 │
