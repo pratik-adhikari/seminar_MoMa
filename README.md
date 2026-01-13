@@ -1,8 +1,13 @@
 # Research Projects
-[![Build and Release PDFs](https://github.com/pratik-adhikari/seminar_MoMa/actions/workflows/publish_pdf.yml/badge.svg)](https://github.com/pratik-adhikari/seminar_MoMa/actions/workflows/publish_pdf.yml)
-
-
+# Research Projects
 This repository contains research work including seminar papers, shared LaTeX build infrastructure, and templates.
+
+## 📄 Download Latest PDFs
+
+| Document | Description | Link |
+|----------|-------------|------|
+| **MoMa Seminar** | Primary Seminar Paper | [📥 Download PDF](pdfs/MoMa_Seminar.pdf) |
+| **Critical Analysis** | Critical Analysis Report on MoMa-LLM | [📥 Download PDF](pdfs/MoMa_Analysis_Report.pdf) |
 
 ## Directory Structure
 
