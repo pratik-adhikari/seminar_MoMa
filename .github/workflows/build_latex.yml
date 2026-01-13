@@ -1,0 +1,42 @@
+name: Build LaTeX Documents
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v2
+
+    - name: Build Docker Image
+      run: |
+        docker build -t research/tex-builder:latest -f latex-common/Dockerfile latex-common
+
+    - name: Compile MoMa Seminar 1
+      run: |
+        cd moma_seminar_1
+        # Ensure scripts are executable
+        chmod +x compile.sh
+        ./compile.sh
+
+    - name: Compile MoMa LLM Project
+      run: |
+        cd momaLLM_minorchars_fixed_project
+        chmod +x compile.sh
+        ./compile.sh
+
+    - name: Upload PDFs
+      uses: actions/upload-artifact@v4
+      with:
+        name: Research-Papers-PDFs
+        path: |
+          moma_seminar_1/dist/main.pdf
+          momaLLM_minorchars_fixed_project/dist/main.pdf
