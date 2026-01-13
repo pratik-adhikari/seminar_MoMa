@@ -7,37 +7,46 @@ on:
     branches: [ "main" ]
 
 jobs:
-  build_pdf:
+  build_latex:
     runs-on: ubuntu-latest
-    
     steps:
-    - name: Checkout Code
-      uses: actions/checkout@v3
+      - name: Checkout Code
+        uses: actions/checkout@v3
 
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v2
+      - name: Compile MoMa Seminar
+        uses: xu-cheng/latex-action@v3
+        with:
+          root_file: main.tex
+          working_directory: moma_seminar
+          # Copy class files from latex-common before building
+          pre_compile: |
+            cp ../latex-common/*.cls .
+            # Install any missing dependencies if needed (though texlive-full is usually huge)
+          post_compile: |
+            latexmk -c
+            rm -f *.cls
+          # Explicitly enable shell escape and ensure glossary/biber support via latexmk
+          latexmk_use_xelatex: false
+          latexmk_shell_escape: true
+          # The action automatically runs latexmk which handles biber/glossaries if configured in latexmkrc
 
-    - name: Build Docker Image
-      run: |
-        docker build -t research/tex-builder:latest -f latex-common/Dockerfile latex-common
+      - name: Compile Critical Analysis Report
+        uses: xu-cheng/latex-action@v3
+        with:
+          root_file: main.tex
+          working_directory: moma_analysis_report
+          pre_compile: |
+            cp ../latex-common/*.cls .
+          post_compile: |
+            latexmk -c
+            rm -f *.cls
+          latexmk_shell_escape: true
 
-    - name: Compile MoMa Seminar
-      run: |
-        cd moma_seminar
-        chmod +x compile.sh
-        ./compile.sh
-
-    - name: Compile MoMa LLM Project
-      run: |
-        cd moma_analysis_report
-        chmod +x compile.sh
-        ./compile.sh
-
-    - name: Upload PDFs
-      uses: actions/upload-artifact@v3
-      if: always()
-      with:
-        name: research-papers
-        path: |
-          moma_seminar/dist/main.pdf
-          moma_analysis_report/dist/main.pdf
+      - name: Upload PDFs
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: research-papers
+          path: |
+            moma_seminar/dist/main.pdf
+            moma_analysis_report/dist/main.pdf
