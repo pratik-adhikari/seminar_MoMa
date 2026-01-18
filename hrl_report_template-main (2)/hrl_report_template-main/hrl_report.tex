@@ -1,0 +1,342 @@
+\documentclass[12pt,oneside,a4paper]{article}
+
+%%%%%%%%%%%%%%%%%%%%%%
+%%% LaTeX packages %%%
+%%%%%%%%%%%%%%%%%%%%%%
+
+%adding packages
+\usepackage{abstract}
+\usepackage{amsfonts}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage[ngerman,english]{babel}
+\usepackage{caption}
+\usepackage{chngcntr}
+\usepackage{emptypage}
+\usepackage{etoolbox}
+\usepackage{fancyhdr}
+\usepackage[T1]{fontenc}
+\usepackage[paper=a4paper,top=3cm,bottom=3cm]{geometry}
+\usepackage{graphicx}
+\graphicspath{{figures/}}
+\usepackage{hhline}
+\usepackage[hidelinks]{hyperref}
+\usepackage[utf8]{inputenc}
+\usepackage{lipsum}
+\usepackage{multirow}
+\usepackage[square,numbers]{natbib}
+\usepackage{rotating}
+\usepackage{sectsty}
+\usepackage{setspace}
+\usepackage[separate-uncertainty = true,multi-part-units=single,per-mode=symbol]{siunitx}
+\usepackage[format=hang]{subcaption}
+\usepackage{tabto}
+\usepackage[absolute]{textpos}
+\usepackage{tikz}
+\usepackage{titling}
+\usepackage{titlesec}
+\usepackage{xcolor}
+\usepackage{lineno} % Package to add line numbers
+
+% Tables
+\usepackage{tabularx}
+\usepackage{booktabs} % lines for tables
+\usepackage{hhline}
+\usepackage{multirow} % multiple rows per column in tables
+
+% Pseudo code
+\usepackage[ruled, linesnumbered, vlined, noend]{algorithm2e} 
+\usepackage[noend]{algpseudocode} 
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% LaTeX settings and macros %%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%% Tabularx setting
+\newcolumntype{Y}{>{\centering\arraybackslash}X}% new Y, equal sized as X but centered
+\renewcommand\tabularxcolumn[1]{m{#1}}% for vertical centering text in X column
+\setlength\extrarowheight{1pt}
+
+% Pseudo code
+\newcommand\mycommfont[1]{\footnotesize\ttfamily\textcolor{blue}{#1}}
+\SetCommentSty{mycommfont}
+
+%% Key definitions for text elements. USE THEM
+\def\secref#1{Sec.~\ref{#1}}
+\def\figref#1{Fig.~\ref{#1}}
+\def\subfigref#1{\subref{#1})}
+\def\subfigrefenclosed#1{(\subref{#1})}
+\def\tabref#1{Tab.~\ref{#1}}
+\def\subtabref#1{\subref{#1})}
+\def\subtabrefenclosed#1{(\subref{#1})}
+\def\eqref#1{Eq.~(\ref{#1})}
+\def\algref#1{Alg.~\ref{#1}}
+\def\alglineref#1{line~\ref{#1}}
+\algnewcommand{\algorithmicgoto}{\textbf{go to}}%
+\algnewcommand{\Goto}[1]{\algorithmicgoto~line~\ref{#1}}%
+
+% Some math definition
+\def\argmax{\mathop{\rm argmax}}
+\def\argmin{\mathop{\rm argmin}}
+\newcommand{\bigO}[1]{$\mathcal{O}(#1)$}
+\newcommand{\R}{\mathbb{R}}
+\DeclareSIUnit\GB{GB}
+
+% Other useful macros
+\newcommand\todo[1]{\textcolor{red}{#1}}
+\newcommand\etal{\emph{et al.}}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Course and student information %%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\title{\LARGE \bf Project Group/Seminar/Lab \\ WT/ST [Year] \\ Title}
+
+\author{Student Name \\ Matriculation No: 0000000 \\ \\ Supervisor: Supervisor Name}
+
+\begin{document}
+%\linenumbers % Add line numbers
+\bibliographystyle{IEEEtran}
+
+\maketitle
+
+%%%%%%%%%%%%
+%%% Hint %%%
+%%%%%%%%%%%%
+
+%\begin{center}
+%	\textbf{!!!Read the paragraph below and then remove it before submission!!!}
+%\end{center}
+
+\todo{
+\begin{center}
+	\textbf{!!!Read the paragraph below and then remove it before submission!!!}
+\end{center}
+Before using this template, please read the README file of the repository.
+Depending on the report that you are planning to write, please use one of the following section structures: Project Group, Lab or Seminar.
+To use the section structure, you have to uncomment them in the code below.
+For basic examples about the usage of LaTeX, please refer to \secref{sec:latex}.
+Before submitting the report, please remove the LaTeX example section.
+}
+
+%%%%%%%%%%%%%%%%
+%%% Abstract %%%
+%%%%%%%%%%%%%%%%
+
+\begin{abstract} 
+The abstract should clearly state that this report is a critical analysis of your paper and in addition contain a very brief introduction to your chosen paper. This includes a short account on the general scenario and the problem that the authors address, their reasons why it is a relevant contribution, and what methods are used in order to solve it. This does \textbf{not} include an assessment on the used methods or any detailed description thereof.
+
+The abstract should not be longer than a \textbf{third of a page}.
+
+\end{abstract}
+\newpage
+
+%%%%%%%%%%%%%%%%%%%%%
+%%% Project group %%%
+%%%%%%%%%%%%%%%%%%%%%
+
+%\section{Einleitung}
+%\label{sec:einleitung}
+%
+%Zunächst sollte kurz das Projekt beschrieben werden.
+%Anschließend wird die Herangehensweise beschrieben und zum nächsten Kapitel übergeleitet. 
+%
+%\section{Verwandte Forschungsarbeiten}
+%\label{sec:forschung}
+%
+%Hier werden relevante Paper besprochen und deren Lösungsansätze dargelegt.
+%
+%
+%\section{Methode}
+%\label{sec:methode}
+%
+%Hier wird der verwendete Lösungsansatz beschrieben.
+%Dabei sollte ein Bezug zu den verwandten Forschungsarbeiten hergestellt werden.
+%
+%\section{Evaluierung}
+%\label{sec:evaluierung}
+%
+%Die verwendete Roboterhardware, sowie ausgeführte Experimente und Ergebnisse sollten hier beschrieben und diskutiert werden.
+%
+%\section{Fazit und Ausblick}
+%\label{sec:fazit}
+%
+%Zum Abschluss wird kurz eine Zusammenfassung gegeben und weitere zukünftige Weiterentwicklungsmöglichkeiten aufgeführt.
+
+%%%%%%%%%%%
+%%% Lab %%%
+%%%%%%%%%%%
+
+%\section{Introduction}
+%\label{sec:introduction}
+%
+%Some short sentences that help to understand the main points of your project and what it is about.
+%
+%\section{Related Work}
+%\label{sec:papers}
+%
+%Add existing scientific papers that are related to your topic.
+%
+%\section{Method}
+%\label{sec:method}
+%
+%In this section, you have to describe your approach and how you have solved the task.
+%
+%\section{Evaluation}
+%\label{sec:evaluation}
+%
+%Describe your experiments, plot your results and shortly discuss them.
+%
+%\section{Conclusion}
+%\label{sec:conclusion}
+%
+%The conclusion should briefly summarize the content of the work and contain the outcome on your own evaluation; this should be approximately \textbf{half a page} long.
+%
+%It is important that you have fully understood your work, in order to provide a sensible summary and discussion. This may also includes reading further cited papers.
+
+%%%%%%%%%%%%%%%
+%%% Seminar %%%
+%%%%%%%%%%%%%%%
+
+%\section{Introduction}
+%\label{sec:introduction}
+%
+%Some short sentences that help to understand the main key points and contributions of the paper.
+%
+%\section{Related Work}
+%\label{sec:papers}
+%
+%Add existing scientific papers that are related to your topic.
+%
+%\section{Paper Summary}
+%\label{sec:summary}
+%
+%The paper summary is the major part of the report and should be approximately \textbf{five pages} long.
+%
+%It should contain a detailed account on the scenario and problem description within the paper and their motivation for addressing the problem.
+%
+%Furthermore, you should carefully present the theoretical section of the paper in a more concise way, e.g.:
+%\begin{itemize}
+%\item Which equations have been derived and used in the paper and which of these are actually necessary to follow the experiments and results?
+%\item Can algorithms be simplified by briefly summarizing their purpose in the paper?
+%\item Skip unnecessarily detailed accounts on hardware or external work, if it is not necessary to follow the experiments and your discussion in the next section.
+%\item etc.
+%\end{itemize}
+%While summarizing the used theoretical methods, everything should still be clear to the reader. If you, e.g., decide to exclude a derivation to an equation, clearly mention that the authors have derived it in the paper and you have excluded it for your analysis.
+%
+%Finally, summarize the performed experiments and the results in the paper and give an assessment on the author's discussion of their own method.
+%
+%You may structure this section any way you like using the \textit{subsection, subsubsection}, etc. tags. If you think that the structure of the paper is not ideal to help the reader follow your report, especially after summarizing it, feel free to adjust it.
+%
+%\section{Discussion}
+%\label{sec:discussion}
+%
+%This section should contain a discussion of the paper and be approximately \textbf{one page} long.
+%
+%The discussion should give a critical assessment on the contribution and relevance of the paper for the robotic community and if the authors present a new solution to a yet unaddressed problem.
+%
+%Furthermore, you should discuss if the authors have presented their methods in an easy-to-follow manner. If other researchers would try to use the methods of the paper, would it be possible to easily reproduce the results or are essential points missing?
+%
+%You should also discuss if the presented experiments are satisfactory to support any claimed contribution within the paper or if other experiments are necessary or might be beneficial. Additionally, can you think of experiments where the presented method might fail and why?
+%
+%Finally, give an account on the completeness of the author's critical discussion on their own method and present your own ideas on how to improve upon the approach in the paper.
+%
+%\section{Conclusion}
+%\label{sec:conclusion}
+%
+%The conclusion should briefly summarize the content of the paper and contain the outcome on your own analysis and discussion of the paper; this should be approximately \textbf{half a page} long.
+%
+%Please note, that you should not copy any text directly from the paper, unless there is a reason for it, e.g., disproving a quoted claim in the paper within your discussion (Section \ref{sec:discussion}).
+%
+%It is important that you have fully understood the paper, in order to provide a sensible summary and discussion. This may also include reading further cited papers, which you may also include at any point in this analysis if it helps in understanding certain aspects.
+
+%%%%%%%%%%%%%%%%%%%%%%
+%%% LaTeX Examples %%%
+%%%%%%%%%%%%%%%%%%%%%%
+
+\pagebreak
+\section{LaTeX Example Usage}
+\label{sec:latex}
+This section contains general example about how to use LaTeX.
+You can find examples for floating environments, figures, equations, algorithms, and tables. 
+
+\subsection{Equations}
+\label{subsec:eqn}
+Use equations as shown below.
+\begin{eqnarray}
+\label{eq:pyth}
+a^2 + b^2 = c^2
+\end{eqnarray}   
+Use Refs as this: The~\eqref{eq:pyth} is the Pythagorean theorem.
+
+You can use section refs the same way: This belongs to~\secref{subsubsec:eqn}.
+Use at least two structural elements at the same level.
+
+\subsection{Figures}
+\label{subsec:fig}
+Use figures as shown in \figref{fig:plat}.
+
+\lipsum[4]
+
+\begin{figure}[h]
+	\centering
+	\includegraphics{Wild_Platypus.jpg}
+	\caption[Meaningful Entry]{This figure is taken from~\cite{platypusPicRef}.}
+	\label{fig:plat}
+\end{figure}
+
+\lipsum[2]
+
+\subsection{Tables}
+\label{subsec:tab}
+Use tables as shown below.
+
+\begin{table}[h]
+	\caption[Meaningful Entry]{Average runtime.}
+	\label{tab:run}
+	\centering
+	\begin{tabularx}{\textwidth}{*{4}{Y}}
+		\toprule[\lightrulewidth]
+		First & Second & Third & Fourth \\
+		\midrule[\lightrulewidth]
+		1.0 & 1.0 & 1.0 & 1.0 \\
+		1.0 & 1.0 & 1.0 & 1.0 \\
+		1.0 & 1.0 & 1.0 & 1.0 \\
+		\bottomrule[\lightrulewidth]
+	\end{tabularx}
+\end{table}
+
+\lipsum[1]
+
+\subsection{Algorithms}
+\label{subsec:algo}
+Use tables as shown below.
+
+\begin{algorithm}[h]
+	\SetAlgoLined
+	\DontPrintSemicolon
+	\SetNoFillComment
+	
+	\SetKwInOut{KwInput}{Input}
+	\SetKwInOut{KwOutput}{Output}	
+	\KwInput{Object identifier \(\mathit{objectID}\)}
+	\KwOutput{Placement pose \(\mathit{placePose}\).}
+	{	\(\mathit{n} \gets 0\)\;
+		\While{\( \mathit{\mathit{objectIsVisible}} = \mathit{True} \)}
+		{	\(\mathit{placePose} \gets \mathit{getPlacePose(objectID)}\)\;
+			\(\mathit{n} \gets \mathit{n}+1\)\;
+			return \(\mathit{placePose}\)\;
+		}
+	}
+	\caption{Querying placement pose while object is visible in scene}
+	\label{algo:flow}
+\end{algorithm}
+
+%%%%%%%%%%%%%%%%%%
+%%% References %%%
+%%%%%%%%%%%%%%%%%%
+
+\clearpage
+\bibliography{Bibliography}
+
+\end{document}
