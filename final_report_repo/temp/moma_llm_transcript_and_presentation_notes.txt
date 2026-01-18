@@ -1,0 +1,291 @@
+# Transcript (line-by-line, timestamped)
+
+01. **[00:00.00–00:04.24]** Hello everybody, I will present our recent work on language-rounded dynamic scene-gross
+02. **[00:04.24–00:07.04]** for mobile manipulation called MOMA LLM.
+03. **[00:07.04–00:11.48]** This is joint work between the University of Freiburg and Toyota Motor Europe.
+04. **[00:11.48–00:15.90]** In our work, we tackle the problem of interactive object search, which requires finding objects
+05. **[00:15.90–00:20.36]** in unexplored environments that contain closed doors as well as target objects that are
+06. **[00:20.36–00:24.28]** hidden within articulated objects such as drawers or cabinets.
+07. **[00:24.28–00:30.72]** As a consequence, our embodied agent has to shape the scene to solve the task successfully.
+08. **[00:30.72–00:34.36]** In the last year, LLMs have proven the capability of high level reasoning.
+09. **[00:34.36–00:38.92]** This was mostly demonstrated in tabletop scenarios or fully observed environments that lack physical
+10. **[00:38.92–00:40.72]** grounding of actions.
+11. **[00:40.72–00:44.32]** The task of mobile manipulation, however, poses a new set of challenges.
+12. **[00:44.32–00:49.64]** First of all, we face large scenes that require an efficient spatial and temporal memory.
+13. **[00:49.64–00:54.72]** Secondly, we face unexplored dynamic environments, and third, we face a mirrored of potential
+14. **[00:54.72–00:57.16]** actions to execute.
+15. **[01:10.72–01:14.96]** First of all, our embodied agent is placed in an unexplored scene, and we assume access
+16. **[01:14.96–01:18.32]** to RGBD observations and ground truth semantics.
+17. **[01:18.32–01:22.32]** Given these observations, we dynamically construct 3D scene graphs, including a navigation
+18. **[01:22.32–01:26.96]** a Voronagraph covering the distinct regions and objects of the explored scene.
+19. **[01:26.96–01:30.80]** Different from previous work, we separate regions based on scene doors.
+20. **[01:30.80–01:36.16]** Lastly, we classify each region in an open set manner based on the contained objects.
+21. **[01:36.16–01:40.08]** Next we provide a structured knowledge representation of the obtained scene graph to our high-level
+22. **[01:40.08–01:41.60]** LLM policy.
+23. **[01:41.60–01:46.40]** This involves a general specification of the tasks such as find a stove.
+24. **[01:46.40–01:50.04]** Then we interleave the scene representation with a set of high-level actions available
+25. **[01:50.04–01:55.92]** to the agent, which includes navigating, opening and closing an object, exploring unseen regions,
+26. **[01:55.92–01:59.40]** and calling done whenever the task is deemed to be completed.
+27. **[01:59.40–02:04.16]** Second, we provide a list of regions and contained objects extracted from the scene graph, which
+28. **[02:04.16–02:08.84]** also includes unexplored areas within these regions.
+29. **[02:08.84–02:13.80]** In order to form temporal memory, we list last executed actions, which allows for autonomous
+30. **[02:13.80–02:15.68]** long horizon execution.
+31. **[02:15.68–02:21.56]** Finally, we asked the LLM to select the high-level action and the involved scene entities.
+32. **[02:21.56–02:24.44]** to introduce interpretability, we also asked the LLM
+33. **[02:24.44–02:26.44]** to reason about its own actions.
+34. **[02:26.44–02:27.76]** And throughout our experiments,
+35. **[02:27.76–02:30.20]** we found that this monatural task and scene description
+36. **[02:30.20–02:31.80]** improves task success over feeding
+37. **[02:31.80–02:35.32]** JSON-formatted signal of data in a brute force manner.
+38. **[02:51.56–02:53.68]** and manipulation skills.
+39. **[02:53.68–02:56.12]** Lastly, we use frontier-based exploration
+40. **[02:56.12–02:58.68]** when asked to explore novel areas.
+41. **[02:58.68–03:00.64]** In simulation using Agibson, we find
+42. **[03:00.64–03:03.40]** that MOMA LLM outperforms both zero-shot and trained
+43. **[03:03.40–03:05.60]** baselines and overall task success
+44. **[03:05.60–03:07.60]** given reasonable time budgets.
+45. **[03:07.60–03:10.80]** As part of our work, we also introduced the novel AUG-E metric,
+46. **[03:10.80–03:13.48]** which represents the area under the efficiency curve.
+47. **[03:13.48–03:15.88]** The AUG-E metric alleviates the need for arbitrarily
+48. **[03:15.88–03:19.64]** set maximum time budgets of the success rate.
+49. **[03:19.64–03:23.48]** All in all, we obtain the highest success rate SPL as well as OQE,
+50. **[03:23.48–03:25.60]** while minimizing the number of object interactions
+51. **[03:25.60–03:28.08]** and distance traveled compared with previous zero-shot
+52. **[03:28.08–03:29.88]** and trained basements.
+53. **[03:29.88–03:32.24]** We also demonstrate the capabilities of MoMA-LLAM
+54. **[03:32.24–03:38.18]** using an Toyota HSR mobile manipulator in a multi-room scene in the real world containing
+55. **[03:38.18–03:41.72]** closed doors and various cabinet and drawer types.
+56. **[03:41.72–03:45.58]** As a result, we observed that MoMA-LLAM show significantly reduced travel distance and
+57. **[03:45.58–03:48.08]** fewer articulated object interactions.
+58. **[03:48.08–03:54.40]** Lastly, we demonstrate that MoMA LLAMs get zero short to more complex queries such as
+59. **[03:54.40–03:59.68]** I am hungry, find me something for breakfast as you can see here, so we'll start with the
+60. **[03:59.68–04:02.72]** the HSR being placed in the living room of our scene,
+61. **[04:02.72–04:06.00]** and MoMA LLM picks the first high-level action,
+62. **[04:06.00–04:09.92]** which is go to the door within the living room,
+63. **[04:09.92–04:12.84]** open it to explore other areas.
+64. **[04:12.84–04:17.00]** Our robot does that, and just the kitchen.
+65. **[04:29.68–04:36.40]** potentially relevant to making a breakfast, our end-to-empty policies that generate these
+66. **[04:37.44–04:43.52]** actions and as you can see we found milk and our high-level LLM policy deems that the task
+67. **[04:43.52–04:51.88]** this B is completed, because we found coffee, cereals and milk. As part of this work, we
+68. **[04:51.88–04:55.92]** make the task definition and code publicly available, so feel free to check it out on
+69. **[04:55.92–04:58.12]** GitHub. Thank you very much for your attention.
+
+---
+
+# Presentation data (template-faithful) + 5-minute presenter notes
+
+> Template adhered to (titles preserved and only extended with “:” / “;”).  
+> Use this as a .txt (markdown) script + slide build checklist.
+
+---
+
+## Slide 1 — Awesome title of your  paper presentation: MoMa-LLM (Language-Grounded Dynamic Scene Graphs for Interactive Object Search)
+
+**On-slide (minimal text):**
+- MoMa-LLM: language-grounded dynamic scene graphs for mobile manipulation
+- Interactive object search in unexplored indoor environments
+- University of Freiburg × Toyota Motor Europe
+
+**Visuals (prefer GIF/video):**
+- **Primary:** GIF of a mobile manipulator navigating an apartment and opening a door/drawer.
+- **Secondary:** A simple “robot + home map + target object” schematic.
+
+<span style="color:red">[PLACEHOLDER] Add GIF of Toyota HSR (or any mobile manipulator) opening a door/drawer while searching.</span>
+
+**Presenter notes (~20–25s):**
+- “I’m presenting a recent system called MoMa-LLM for *interactive object search* with mobile manipulation.”
+- “Core problem: find a target object in a large, initially unknown home where doors and drawers can hide things.”
+- “High-level contribution: give an LLM a *structured, scalable* world model so it can plan long-horizon actions without hallucinating.”
+
+---
+
+## Slide 2 — Introduction /Motivation: Why interactive object search is harder than ‘LLMs can plan’ demos
+
+**On-slide (minimal text):**
+- Task: find objects in *unexplored* homes
+- Obstacles: *closed doors* + *articulated containers* (drawers/cabinets)
+- Agent must *change the world* (open/close) to succeed
+
+**Visuals (prefer GIF/video):**
+- Split image: (left) closed door blocking a room; (right) drawer hiding target object.
+- Short looping GIF: opening drawer reveals object.
+
+<span style="color:red">[PLACEHOLDER] Insert a 2-panel image: door barrier + drawer reveal.</span>
+
+**Presenter notes (~45–55s):**
+- “Interactive object search isn’t just navigation. The target can be behind a door or inside a drawer.”
+- “So success requires *interaction*: opening doors, opening cabinets, exploring unknown rooms.”
+- “This creates a long-horizon partially observed planning problem: you don’t know the map at start, and actions change what you can see.”
+
+---
+
+## Slide 3 — Research area: Where this fits—LLMs for embodied agents vs mobile manipulation realities
+
+**On-slide (minimal text):**
+- LLMs: strong high-level reasoning (mostly tabletop / fully observed)
+- Mobile manipulation adds:
+  - large scenes → needs spatial/temporal memory
+  - unexplored/dynamic environments
+  - many possible actions
+
+**Visuals (prefer GIF/video):**
+- Contrast graphic: “tabletop fully observed” vs “whole home partial observation”.
+- Simple icon row: memory / unknown space / action branching.
+
+<span style="color:red">[PLACEHOLDER] Add a contrast figure: tabletop vs home-scale exploration.</span>
+
+**Presenter notes (~45–55s):**
+- “A lot of LLM-robot demos assume the world is effectively known: tabletop, few objects, fully observed.”
+- “Here the environment is big and initially unknown, so the agent needs a *compact memory* of what it has seen.”
+- “Also, the action space explodes: navigate, open door, open drawer, explore frontier—many entities to pick from.”
+
+---
+
+## Slide 4 — Approach: Dynamic 3D scene graphs + navigation Voronagraph + door-based region separation
+
+**On-slide (minimal text):**
+- Inputs: RGB-D + semantics (assumed available)
+- Build dynamic 3D scene graph
+- Navigation graph: Voronoi graph over explored free space
+- Novelty: separate regions using *doors*
+- Open-set region classification from contained objects
+
+**Visuals (prefer GIF/video):**
+- Pipeline diagram animation: RGB-D → map → Voronoi graph → rooms split by doors → labeled rooms.
+- If possible, GIF that progressively reveals a map and graph as the robot explores.
+
+<span style="color:red">[PLACEHOLDER] Add a step-by-step pipeline graphic (ideally animated).</span>
+
+**Presenter notes (~70–80s):**
+- “System starts with RGB-D and semantics and incrementally builds a representation as it explores.”
+- “They construct a 3D scene graph *and* a navigation ‘Voronagraph’ that abstracts free space into a tractable graph.”
+- “Key difference from prior work: they segment regions based on *doors*—cut connectivity at doors to form room-like components.”
+- “Then they classify each region in an open-set way based on the objects inside—so it can call something a kitchen even if it wasn’t pre-labeled.”
+
+---
+
+## Slide 5 — Approach: Structured LLM policy with grounded high-level actions + temporal memory
+
+**On-slide (minimal text):**
+- Task spec: “find a stove” / “I’m hungry, find breakfast”
+- High-level action set:
+  - navigate, open/close, explore, done
+- State to LLM:
+  - regions + objects + unexplored areas
+  - last actions (temporal memory)
+- Ask LLM: choose action + entities; also “explain why”
+
+**Visuals (prefer GIF/video):**
+- Screenshot-style prompt mockup: structured sections (task, actions, scene state, history).
+- Small flow: “LLM output → skill execution → update graph → repeat.”
+
+<span style="color:red">[PLACEHOLDER] Insert a ‘prompt layout’ graphic (structured blocks) and a loop diagram.</span>
+
+**Presenter notes (~70–80s):**
+- “They don’t just dump raw JSON. They provide a *structured natural-language* description: task, allowed actions, and the current scene graph summary.”
+- “Scene summary includes rooms/regions, objects, and importantly *unexplored areas within regions*—so the LLM knows what remains unknown.”
+- “They include the last executed actions to form temporal memory for long-horizon execution.”
+- “LLM selects an action plus specific entities (which door, which room), and it also produces a short rationale for interpretability.”
+- “Empirically, this structured description beats brute-force JSON feeding.”
+
+---
+
+## Slide 6 — Evaluation/Results: Simulation (iGibson), new AUC-E metric, and efficiency gains
+
+**On-slide (minimal text):**
+- MoMa-LLM > zero-shot + trained baselines (success under time budget)
+- Introduce AUC-E (area under efficiency curve)
+- Highest SR/SPL/AUC-E while reducing:
+  - interactions
+  - distance traveled
+
+**Visuals (prefer GIF/video):**
+- AUC curve figure (efficiency vs time) with shaded area.
+- Table snippet highlighting MoMa-LLM row (SR, SPL, AUC-E).
+- If you can: GIF of simulated run with frontier exploration overlay.
+
+<span style="color:red">[PLACEHOLDER] Add the paper’s main efficiency curve + metric table. Highlight MoMa-LLM row.</span>
+
+**Presenter notes (~55–65s):**
+- “In iGibson simulation, MoMa-LLM beats both zero-shot and trained baselines—particularly when you care about *efficiency*.”
+- “They introduce AUC-E: area under the efficiency curve, which avoids picking an arbitrary time cutoff for success rate.”
+- “Net effect: highest success and path efficiency, with fewer object interactions and less distance traveled.”
+
+---
+
+## Slide 7 — Evaluation/Results: Real-world demo on Toyota HSR + complex language queries
+
+**On-slide (minimal text):**
+- Real-world multi-room apartment (doors + drawers/cabinets)
+- Reduced travel distance + fewer interactions
+- Handles more complex query: “I am hungry, find breakfast”
+
+**Visuals (prefer GIF/video):**
+- Real robot GIF/video: start in living room → open door → enter kitchen → find milk/cereal/coffee.
+- Overlay: path trace + interaction count.
+
+<span style="color:red">[PLACEHOLDER] Add a real-world video/GIF sequence: living room → door open → kitchen exploration → object found.</span>
+
+**Presenter notes (~40–50s):**
+- “They also run on a Toyota HSR in a multi-room real apartment with closed doors and different cabinet types.”
+- “They report similar success but significantly reduced travel and fewer articulated interactions.”
+- “They also show a more natural query: ‘I am hungry, find me something for breakfast’—the policy explores, finds relevant items like milk/cereal/coffee, then terminates.”
+
+---
+
+## Slide 8 — Discussion: What’s actually novel, and what’s swept under the rug
+
+**On-slide (minimal text):**
+- Pros:
+  - scalable memory via scene graph + Voronagraph
+  - explicit modeling of doors/regions
+  - grounded, constrained action space for LLM
+- Cons / assumptions:
+  - assumes semantics + RGB-D + localization
+  - manipulation robustness not the focus
+  - prompt/state engineering still brittle
+
+**Visuals (prefer GIF/video):**
+- Pros/cons icon list.
+- Small “assumption stack” diagram (what must work for MoMa-LLM to work).
+
+<span style="color:red">[PLACEHOLDER] Add an ‘assumptions stack’ diagram (Perception → Mapping → Graph → LLM → Skills).</span>
+
+**Presenter notes (~35–45s):**
+- “What’s genuinely useful here is the *representation*: a structured, dynamically updated scene graph that stays compact, plus an action set that is physically grounded.”
+- “But notice the assumptions: ground-truth or strong semantics, good localization, and reliable interaction skills.”
+- “So this is less about solving manipulation failures and more about making high-level planning sane at home scale.”
+
+---
+
+## Slide 9 — Summary: Take-home message + pointer to code
+
+**On-slide (minimal text):**
+- MoMa-LLM: LLM planning grounded by dynamic scene graphs + structured prompts
+- Door-based region separation improves large-scene reasoning
+- Gains in efficiency (AUC-E) and fewer interactions; works on real HSR
+- Code/tasks released on GitHub
+
+**Visuals (prefer GIF/video):**
+- One “hero summary” graphic: pipeline + result callouts.
+- QR code to GitHub.
+
+<span style="color:red">[PLACEHOLDER] Add QR code to the project GitHub and a single summary figure.</span>
+
+**Presenter notes (~20–25s):**
+- “Take-home: if you want LLMs to do long-horizon embodied tasks, you need *structured state* that scales and an action space that’s grounded.”
+- “Their door-aware region graph and structured prompting yield higher efficiency and fewer interactions, and they show it in sim and on a real robot.”
+- “They also release the task definition and code.”
+
+---
+
+# Timing plan (target ~5:00)
+- Slide 1: 0:25
+- Slide 2: 0:50
+- Slide 3: 0:50
+- Slide 4: 1:15
+- Slide 5: 1:15
+- Slide 6: 1:00
+- Slide 7: 0:45
+- Slide 8: 0:40
+- Slide 9: 0:20

@@ -1,0 +1,212 @@
+\documentclass[12pt,oneside,a4paper]{article}
+
+%%%%%%%%%%%%%%%%%%%%%%
+%%% LaTeX packages %%%
+%%%%%%%%%%%%%%%%%%%%%%
+
+%adding packages
+\usepackage{abstract}
+\usepackage{amsfonts}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage[ngerman,english]{babel}
+\usepackage{caption}
+\usepackage{chngcntr}
+\usepackage{emptypage}
+\usepackage{etoolbox}
+\usepackage{fancyhdr}
+\usepackage[T1]{fontenc}
+\usepackage[paper=a4paper,top=3cm,bottom=3cm]{geometry}
+\usepackage{graphicx}
+\graphicspath{{figures/}}
+\usepackage{hhline}
+\usepackage[hidelinks]{hyperref}
+\usepackage[utf8]{inputenc}
+\usepackage{lipsum}
+\usepackage{multirow}
+\usepackage[square,numbers]{natbib}
+\usepackage{rotating}
+\usepackage{sectsty}
+\usepackage{setspace}
+\usepackage[separate-uncertainty = true,multi-part-units=single,per-mode=symbol]{siunitx}
+\usepackage[format=hang]{subcaption}
+\usepackage{tabto}
+\usepackage[absolute]{textpos}
+\usepackage{tikz}
+\usepackage{titling}
+\usepackage{titlesec}
+\usepackage{xcolor}
+\usepackage{lineno} % Package to add line numbers
+
+% Tables
+\usepackage{tabularx}
+\usepackage{booktabs} % lines for tables
+\usepackage{hhline}
+\usepackage{multirow} % multiple rows per column in tables
+
+% Pseudo code
+\usepackage[ruled, linesnumbered, vlined, noend]{algorithm2e} 
+\usepackage[noend]{algpseudocode} 
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% LaTeX settings and macros %%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%% Tabularx setting
+\newcolumntype{Y}{>{\centering\arraybackslash}X}% new Y, equal sized as X but centered
+\renewcommand\tabularxcolumn[1]{m{#1}}% for vertical centering text in X column
+\setlength\extrarowheight{1pt}
+
+% Pseudo code
+\newcommand\mycommfont[1]{\footnotesize\ttfamily\textcolor{blue}{#1}}
+\SetCommentSty{mycommfont}
+
+%% Key definitions for text elements. USE THEM
+\def\secref#1{Sec.~\ref{#1}}
+\def\figref#1{Fig.~\ref{#1}}
+\def\subfigref#1{\subref{#1})}
+\def\subfigrefenclosed#1{(\subref{#1})}
+\def\tabref#1{Tab.~\ref{#1}}
+\def\subtabref#1{\subref{#1})}
+\def\subtabrefenclosed#1{(\subref{#1})}
+\def\eqref#1{Eq.~(\ref{#1})}
+\def\algref#1{Alg.~\ref{#1}}
+\def\alglineref#1{line~\ref{#1}}
+\algnewcommand{\algorithmicgoto}{\textbf{go to}}%
+\algnewcommand{\Goto}[1]{\algorithmicgoto~line~\ref{#1}}%
+
+% Some math definition
+\def\argmax{\mathop{\rm argmax}}
+\def\argmin{\mathop{\rm argmin}}
+\newcommand{\bigO}[1]{$\mathcal{O}(#1)$}
+\newcommand{\R}{\mathbb{R}}
+\DeclareSIUnit\GB{GB}
+
+% Other useful macros
+\newcommand\todo[1]{\textcolor{red}{#1}}
+\newcommand\etal{\emph{et al.}}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Course and student information %%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\title{\LARGE \bf Project Group/Seminar/Lab \\ WT/ST [Year] \\ Title}
+
+\author{Student Name \\ Matriculation No: 0000000 \\ \\ Supervisor: Supervisor Name}
+
+\begin{document}
+%\linenumbers % Add line numbers
+\bibliographystyle{IEEEtran}
+
+\maketitle
+
+% %%%%%%%%%%%%%%%%
+% %%% Abstract %%%
+% %%%%%%%%%%%%%%%%
+
+\begin{abstract} 
+To fully leverage mobile manipulation robots, agents must autonomously execute long-horizon tasks in large, unexplored environments [1]. This paper addresses the challenge of interactive object search, where robots must navigate, explore, and manipulate objects (e.g., opening doors and drawers) to find targets in partially observable settings [2]. We propose MoMa-LLM, a novel approach that grounds Large Language Models (LLMs) within structured representations derived from open-vocabulary scene graphs, which are dynamically updated during exploration [3]. By tightly interleaving these representations with an object-centric action space, the system achieves zero-shot, open-vocabulary reasoning [4]. To rigorously benchmark performance, we introduce a novel evaluation paradigm utilizing full efficiency curves and the Area Under the Curve for Efficiency (AUC-E) metric [5]. Extensive experiments in simulation and the real world demonstrate that MoMa-LLM substantially improves search efficiency compared to state-of-the-art baselines like HIMOS and ESC-Interactive [6].
+\end{abstract}
+\newpage
+
+% %%%%%%%%%%%%%%%
+% %%% Seminar %%%
+% %%%%%%%%%%%%%%%
+
+\input{01_Introduction}
+\input{02_Related_Work}
+\input{03_Paper_Summary}
+\input{03_3_Experiments}
+\input{04_Discussion}
+\input{05_Conclusion}
+
+%%%%%%%%%%%%%%%%%%%%%%
+%%% LaTeX Examples %%%
+%%%%%%%%%%%%%%%%%%%%%%
+
+\pagebreak
+\section{LaTeX Example Usage}
+\label{sec:latex}
+This section contains general example about how to use LaTeX.
+You can find examples for floating environments, figures, equations, algorithms, and tables. 
+
+\subsection{Equations}
+\label{subsec:eqn}
+Use equations as shown below.
+\begin{eqnarray}
+\label{eq:pyth}
+a^2 + b^2 = c^2
+\end{eqnarray}   
+Use Refs as this: The~\eqref{eq:pyth} is the Pythagorean theorem.
+
+You can use section refs the same way: This belongs to~\secref{subsubsec:eqn}.
+Use at least two structural elements at the same level.
+
+\subsection{Figures}
+\label{subsec:fig}
+Use figures as shown in \figref{fig:plat}.
+
+\lipsum[4]
+
+\begin{figure}[h]
+	\centering
+	\includegraphics{Wild_Platypus.jpg}
+	\caption[Meaningful Entry]{This figure is taken from~\cite{platypusPicRef}.}
+	\label{fig:plat}
+\end{figure}
+
+\lipsum[2]
+
+\subsection{Tables}
+\label{subsec:tab}
+Use tables as shown below.
+
+\begin{table}[h]
+	\caption[Meaningful Entry]{Average runtime.}
+	\label{tab:run}
+	\centering
+	\begin{tabularx}{\textwidth}{*{4}{Y}}
+		\toprule[\lightrulewidth]
+		First & Second & Third & Fourth \\
+		\midrule[\lightrulewidth]
+		1.0 & 1.0 & 1.0 & 1.0 \\
+		1.0 & 1.0 & 1.0 & 1.0 \\
+		1.0 & 1.0 & 1.0 & 1.0 \\
+		\bottomrule[\lightrulewidth]
+	\end{tabularx}
+\end{table}
+
+\lipsum[1]
+
+\subsection{Algorithms}
+\label{subsec:algo}
+Use tables as shown below.
+
+\begin{algorithm}[h]
+	\SetAlgoLined
+	\DontPrintSemicolon
+	\SetNoFillComment
+	
+	\SetKwInOut{KwInput}{Input}
+	\SetKwInOut{KwOutput}{Output}	
+	\KwInput{Object identifier \(\mathit{objectID}\)}
+	\KwOutput{Placement pose \(\mathit{placePose}\).}
+	{	\(\mathit{n} \gets 0\)\;
+		\While{\( \mathit{\mathit{objectIsVisible}} = \mathit{True} \)}
+		{	\(\mathit{placePose} \gets \mathit{getPlacePose(objectID)}\)\;
+			\(\mathit{n} \gets \mathit{n}+1\)\;
+			return \(\mathit{placePose}\)\;
+		}
+	}
+	\caption{Querying placement pose while object is visible in scene}
+	\label{algo:flow}
+\end{algorithm}
+
+%%%%%%%%%%%%%%%%%%
+%%% References %%%
+%%%%%%%%%%%%%%%%%%
+
+\clearpage
+\bibliography{Bibliography}
+
+\end{document}
