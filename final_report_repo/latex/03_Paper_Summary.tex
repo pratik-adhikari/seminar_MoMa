@@ -7,12 +7,12 @@ The authors address the challenge of embodied reasoning where a robotic agent mu
 \textbf{POMDP formulation}
 The problem is formalized as a Partially Observable Markov Decision Process (POMDP) tuple $\mathcal{M} = (S, A, O, T, P, r)$:
 \begin{itemize}
-    \item \textbf{S (States):} The complete state of the world, including robot pose, map, and object states (e.g., drawer open/closed) \cite{ref3}.
-    \item \textbf{A (Actions):} Hybrid action space with high-level primitives (navigate, open) and low-level controllers \cite{ref5}.
-    \item \textbf{O (Observations):} RGB-D images, robot pose, and semantic segmentations received by the agent \cite{ref6}.
-    \item \textbf{T (Transition):} $T(s'|s, a)$ representing the probability of the state evolving from $s$ to $s'$ given action $a$ \cite{ref7}.
-    \item \textbf{P (Observation model):} $P(o|s)$ representing the likelihood of receiving observation $o$ in state $s$ \cite{ref8}.
-    \item \textbf{r (Reward):} Optimizing for efficient search (finding the object with minimal cost) \cite{ref9}.
+    \item \textbf{S (States):} The complete state of the world, including robot pose, map, and object states (e.g., drawer open/closed) \citetip{ref3}{HIMOS (Schmalstieg et al., 2023)}.
+    \item \textbf{A (Actions):} Hybrid action space with high-level primitives (navigate, open) and low-level controllers \citetip{ref5}{MoMa-LLM Project Page}.
+    \item \textbf{O (Observations):} RGB-D images, robot pose, and semantic segmentations received by the agent \citetip{ref6}{ESC (Yang et al., 2023)}.
+    \item \textbf{T (Transition):} $T(s'|s, a)$ representing the probability of the state evolving from $s$ to $s'$ given action $a$ \citetip{ref7}{MoMa-LLM (Honerkamp et al., 2024)}.
+    \item \textbf{P (Observation model):} $P(o|s)$ representing the likelihood of receiving observation $o$ in state $s$ \citetip{ref8}{MoMa-LLM - OpenReview}.
+    \item \textbf{r (Reward):} Optimizing for efficient search (finding the object with minimal cost) \citetip{ref9}{MoMa-LLM - RSS Workshop}.
 \end{itemize}
 
 \subsection{Approach: MoMa-LLM}
@@ -23,14 +23,13 @@ The system builds a layered representation of the environment.
 
 \textbf{Voronoi Graph Construction}
 \begin{itemize}
-    \item \textbf{Construction:} Created from the Generalized Voronoi Diagram (GVD) of the inflated occupancy map, representing points equidistant to obstacles \cite{ref7}.
-    \item \textbf{Utility:} Provides a safe navigational backbone that maximizes clearance from obstacles, critical for mobile manipulators \cite{ref10}.
+    \item \textbf{Construction:} Created from the Generalized Voronoi Diagram (GVD) of the inflated occupancy map, representing points equidistant to obstacles \citetip{ref7}{MoMa-LLM (Honerkamp et al., 2024)}.
+    \item \textbf{Utility:} Provides a safe navigational backbone that maximizes clearance from obstacles, critical for mobile manipulators \citetip{ref10}{LookPlanGraph}.
 \end{itemize}
 
 \textbf{Room Classification}
 \begin{itemize}
-    \item \textbf{Prompting:} The LLM is provided with a list of object categories detected within a room cluster (e.g., "bed, lamp") \cite{ref19}.
-    \item \textbf{Output:} The LLM infers the semantic room label (e.g., "Bedroom"), allowing for open-vocabulary classification \cite{ref20}.
+    \item \textbf{Prompting:} The LLM is provided with a list of object categories detected within a room cluster (e.g., "bed, lamp") \citetip{ref19}{Open-Vocabulary Search}.
 \end{itemize}
 
 \subsubsection{High-Level Action Space}
@@ -49,11 +48,11 @@ The system converts the dynamic graph into a structured text prompt for the LLM.
 \textbf{Scene Structure Encoding}
 \begin{itemize}
     \item \textbf{Serialization:} The graph is serialized into a hierarchical list (Room -> Objects).
-    \item \textbf{Abstraction:} Distances are binned into natural language adjectives ("near", "far") and object states are explicit ("closed fridge") to facilitate reasoning \cite{ref1}.
+    \item \textbf{Abstraction:} Distances are binned into natural language adjectives ("near", "far") and object states are explicit ("closed fridge") to facilitate reasoning \citetip{ref1}{MoMa-LLM (Honerkamp et al., 2024)}.
 \end{itemize}
 
 \textbf{Partial Observability}
 \begin{itemize}
-    \item \textbf{Frontiers:} Unknown space is explicitly represented as "Unexplored Area" (local) or "Leading Out" (global) nodes, allowing the LLM to reason about exploration \cite{ref6}.
-    \item \textbf{Replanning:} The prompt includes an "Analysis" and "Reasoning" step (Chain-of-Thought) before generating the next action command, with history dynamically realigned to the current map \cite{ref14}.
+    \item \textbf{Frontiers:} Unknown space is explicitly represented as "Unexplored Area" (local) or "Leading Out" (global) nodes, allowing the LLM to reason about exploration \citetip{ref6}{ESC (Yang et al., 2023)}.
+    \item \textbf{Replanning:} The prompt includes an "Analysis" and "Reasoning" step (Chain-of-Thought) before generating the next action command, with history dynamically realigned to the current map \citetip{ref14}{MoMa-LLM - Emergent Mind}.
 \end{itemize}
