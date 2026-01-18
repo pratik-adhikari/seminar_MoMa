@@ -1,4 +1,16 @@
-\section{Introduction}
+Interactive embodied AI tasks in large, human-centered environments require robots to reason over long horizons and interact with a multitude of objects \cite{ref7}. In many real-world scenarios, these environments are a priori unknown or continuously rearranged, making autonomous operation significantly more difficult \cite{ref8}. Specifically, the task of interactive object search presents unique challenges because objects are not always openly visible; they may be stored inside receptacles like cabinets or drawers, or located behind closed doors \cite{ref9}. Consequently, an agent cannot rely on directional reasoning alone but must actively manipulate the environment—opening doors to navigate and searching through containers—to succeed \cite{ref10}.
+
+\subsection{Limitations of Existing LLM Methods}
+Recent advancements have shown the potential of Large Language Models (LLMs) for generating high-level robotic plans \cite{ref11}. However, existing methods such as SayCan or SayPlan are insufficient for interactive search in unexplored settings for several reasons:
+
+\begin{itemize}
+    \item \textbf{Assumption of Full Observability:} Many prior works focus on fully observed environments, such as tabletop manipulation or pre-explored scenes \cite{ref12}.
+    \item \textbf{Scalability and Hallucination:} In large, partially observable scenes with numerous objects, simply providing an LLM with raw observations or lists of objects increases the risk of generating impractical sequences or hallucinations \cite{ref13}. Simple prompting strategies or raw JSON inputs of full scene graphs have proven insufficient for complex reasoning in these contexts \cite{ref14}.
+    \item \textbf{Limited Scope:} Methods often restrict tasks to single rooms or rely on non-interactive navigation, failing to address the complexities of multi-room exploration and physical interaction \cite{ref15}.
+\end{itemize}
+
+\subsection{Proposed Solution}
+To address these limitations, the authors propose MoMa-LLM, a method that grounds LLMs in dynamically built scene graphs \cite{ref16}. This approach utilizes a scene understanding module that constructs open-vocabulary scene graphs from dense maps and Voronoi graphs as the robot explores \cite{ref17}. By extracting structured and compact textual representations from these dynamic graphs, the system enables pre-trained LLMs to plan efficiently in partially observable environments \cite{ref18}. This allows the robot to perform zero-shot, open-vocabulary reasoning, extending readily to a spectrum of complex mobile manipulation tasks \cite{ref19}.
 \label{sec:introduction}
 
 \subsection{Motivation and Challenge}
