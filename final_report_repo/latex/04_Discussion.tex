@@ -1,28 +1,23 @@
 \section{Discussion}
 \label{sec:discussion}
 
-The proposed MoMa-LLM framework presents a significant advancement in semantic interactive object search by grounding Large Language Models (LLMs) in dynamic scene graphs. While the approach demonstrates impressive zero-shot capabilities and efficient search strategies, a critical analysis reveals several limitations regarding its reliance on ideal perception and the computational overhead of its reasoning modules.
-
-\subsection{Strengths}
+\textbf{Strengths}
 \begin{itemize}
-    \item \textbf{Robust Open-Vocabulary Reasoning:} A primary strength of the system is its ability to perform zero-shot, open-vocabulary reasoning, allowing it to adapt to novel semantic categories without retraining \cite{ref1}. This capability enables the system to outperform state-of-the-art baselines like HIMOS and ESC-Interactive by effectively leveraging the "accumulated knowledge about the human world" contained within pre-trained LLMs \cite{ref2}.
-    \item \textbf{Real-World Transferability:} The system demonstrates strong potential for zero-shot transfer from simulation to the real world. By separating high-level reasoning from low-level execution, the authors achieved an 80\% success rate in real-world experiments using a Toyota HSR robot, despite the scene layout and sub-policies differing significantly from the simulation environment \cite{ref3}.
-    \item \textbf{Resilience to Segmentation Errors:} The policy exhibits robustness against imperfect room segmentation. Although the door-based room separation algorithm tends to under-segment areas—particularly in "open room concepts" like combined kitchen-living rooms—the agent’s reasoning capability allows it to function effectively even when objects from multiple functional areas are clustered into a single room node \cite{ref4}.
+    \item \textbf{Open-vocabulary reasoning:} Capable of handling novel room and object categories without retraining \cite{ref1}.
+    \item \textbf{Structured reasoning:} Using scene graphs as a bridge allows the LLM to reason effectively about geometry and topology \cite{ref2}.
+    \item \textbf{Robustness:} Demonstrated resilience to segmentation errors and real-world domain shifts \cite{ref4}.
 \end{itemize}
 
-\subsection{Weaknesses and Limitations}
+\textbf{Limitations}
 \begin{itemize}
-    \item \textbf{Reliance on Ground Truth Perception:} A significant limitation of the current implementation is its dependence on "ground truth perception for semantic masks, depth, localization and handle detection" \cite{ref5}. In real-world deployment, sensor noise and occlusion would likely degrade the accuracy of the dynamic scene graph, potentially leading to planning failures that are not accounted for in the simulation results. The authors acknowledge that extracting meaningful feedback for failure analysis in real-world robots remains an open problem \cite{ref6}.
-    \item \textbf{Difficulties with Open-Room Layouts:} The scene graph construction relies on a door-based separation method, which struggles with open floor plans. The evaluation shows that this method is "prone to open room concepts," leading to under-segmentation where distinct functional areas are merged \cite{ref7}. While the policy is robust to this, the segmentation accuracy itself drops significantly; for example, in simulation, the average room category accuracy was only 27.6\% due to these layout ambiguities \cite{ref8}.
-    \item \textbf{Computational Latency:} The system incurs a high computational cost, largely driven by the LLM reasoning steps. An analysis of runtime components reveals that "LLM queries for high-level reasoning take up the majority" of the time in simulation \cite{ref9}. Furthermore, the current implementation fully recomputes the scene graph at every time step rather than performing incremental updates, which is inefficient for long-horizon tasks \cite{ref10}.
-    \item \textbf{Limited Feedback Modality:} The feedback mechanism provided to the LLM is textually sparse (e.g., "success" or "failure") \cite{ref11}. The system lacks detailed visual feedback, which prevents the planner from understanding why a specific action failed (e.g., a gripper slipping off a handle vs. a locked door), thereby limiting its ability to recover from complex physical failures \cite{ref12}.
+    \item \textbf{Perception dependency:} heavily relies on ground-truth or high-quality semantics; limited by "garbage-in/garbage-out" \cite{ref5}.
+    \item \textbf{Latency:} LLM queries dominate the runtime, and full graph re-computation scales poorly \cite{ref9}.
+    \item \textbf{Cost blindness:} High-level planning decouples reasoning from low-level execution costs \cite{ref12}.
 \end{itemize}
 
-\subsection{Future Work}
-To address these limitations, the authors propose several avenues for future research:
+\textbf{Reproducibility}
 \begin{itemize}
-    \item \textbf{Integration of Vision-Language Models (VLMs):} The authors suggest that replacing the current adjective-based distance encodings with "vision-language models is very promising" \cite{ref13}. This would allow for a more direct incorporation of dense spatial and geometric information into the reasoning process.
-    \item \textbf{Relaxing Perception Assumptions:} Future iterations aim to move away from ground-truth reliance by "fully constructing scene graphs from noisy sensor inputs," potentially utilizing open-vocabulary representations directly from raw sensor data \cite{ref14}.
-    \item \textbf{Holistic Room Clustering:} To better handle non-standard layouts, the authors point toward "more holistic approaches to incorporate spatial and semantic details in room clustering" rather than relying solely on geometric constrictions like doors \cite{ref15}.
-    \item \textbf{Enhanced Visual Feedback:} Improving robustness will require incorporating "more detailed visual feedback for the identification of object states and failure reasons," allowing the agent to distinguish between different types of interaction failures \cite{ref16}.
+    \item \textbf{Code availability:} The authors reference a project page, but specific release details for the full pipeline are limited \cite{ref14}.
+    \item \textbf{Missing details:} Real-world failure analysis is constrained by limited feedback modalities \cite{ref16}.
 \end{itemize}
+

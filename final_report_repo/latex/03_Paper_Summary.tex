@@ -2,90 +2,58 @@
 \label{sec:paper_summary}
 
 \subsection{Problem Statement}
-The authors address the challenge of embodied reasoning where a robotic agent must locate specific objects within large, unexplored, and human-centric environments \cite{ref1}. To succeed, the agent must simultaneously perceive the environment to build a representation and reason about exploration and interaction (e.g., opening doors or drawers) to complete the task \cite{ref2}.
+The authors address the challenge of embodied reasoning where a robotic agent must locate specific objects within large, unexplored environments.
 
-\subsubsection{Formalization}
-The problem is formalized as a Partially Observable Markov Decision Process (POMDP), denoted as a tuple $\mathcal{M} = (S, A, O, T(s'|s, a), P(o|s), r(s, a))$ \cite{ref3}. The components are defined as follows:
+\textbf{POMDP formulation}
+The problem is formalized as a Partially Observable Markov Decision Process (POMDP) tuple $\mathcal{M} = (S, A, O, T, P, r)$:
 \begin{itemize}
-    \item \textbf{Goal ($g$):} A natural language description of the task the agent must complete \cite{ref4}.
-    \item \textbf{State Space ($S$) \& Action Space ($A$):} The underlying states and available actions for the agent \cite{ref5}.
-    \item \textbf{Observation Space ($O$):} The agent's current observation $o$, consisting of a posed RGB-D frame $I_{t}$ \cite{ref6}.
-    \item \textbf{Transition Probability ($T$):} Defined as $T(s'|s, a)$, representing the probability of moving from state $s$ to $s'$ given action $a$ \cite{ref7}.
-    \item \textbf{Observation Probability ($P$):} Defined as $P(o|s)$, representing the likelihood of receiving observation $o$ in state $s$ \cite{ref8}.
-    \item \textbf{Reward Function ($r$):} Defined as $r(s, a)$, providing feedback on the action taken \cite{ref9}.
-\end{itemize}
-
-\subsubsection{Task: Semantic Interactive Object Search}
-The paper introduces the task of Semantic Interactive Object Search. In this scenario:
-\begin{itemize}
-    \item \textbf{Objective:} The agent must find a target object category (e.g., a specific food item or tool) within an indoor environment \cite{ref10}.
-    \item \textbf{Constraints:} The environment is initially unexplored, and objects may not be openly visible \cite{ref11}.
-    \item \textbf{Interaction:} The task requires physical manipulation, such as opening doors to navigate through rooms and searching inside receptacles like cabinets and drawers to reveal hidden objects \cite{ref12}.
-    \item \textbf{Success Condition:} The task is considered successful only if the agent observes an instance of the target category and explicitly executes the \texttt{done()} command \cite{ref13}.
-\end{itemize}
-
-\subsubsection{Extension of Schmalstieg et al. \cite{ref7}}
-This work builds directly upon the "interactive search task" introduced by Schmalstieg et al. (referenced as \cite{ref7} in the source text) \cite{ref14}. The authors extend this baseline in several critical ways to increase complexity and realism:
-\begin{itemize}
-    \item \textbf{Semantic vs. Random Placement:} While Schmalstieg et al. focused on random target placements, this work introduces a semantic variation \cite{ref15}. The environment maintains realistic semantic co-occurrences (e.g., specific objects appearing near related objects), allowing the agent to use visible objects as cues to locate the target \cite{ref16}.
-    \item \textbf{Scale and Complexity:} The task is expanded to include a much larger number of objects and receptacles compared to the restricted set used in the previous work \cite{ref17}.
-    \item \textbf{Object Relations:} It incorporates a prior distribution of realistic room-object and object-object relations, meaning the presence of certain furniture or items informs the probability of the target's location \cite{ref18}.
+    \item \textbf{S (States):} The complete state of the world, including robot pose, map, and object states (e.g., drawer open/closed) \cite{ref3}.
+    \item \textbf{A (Actions):} Hybrid action space with high-level primitives (navigate, open) and low-level controllers \cite{ref5}.
+    \item \textbf{O (Observations):} RGB-D images, robot pose, and semantic segmentations received by the agent \cite{ref6}.
+    \item \textbf{T (Transition):} $T(s'|s, a)$ representing the probability of the state evolving from $s$ to $s'$ given action $a$ \cite{ref7}.
+    \item \textbf{P (Observation model):} $P(o|s)$ representing the likelihood of receiving observation $o$ in state $s$ \cite{ref8}.
+    \item \textbf{r (Reward):} Optimizing for efficient search (finding the object with minimal cost) \cite{ref9}.
 \end{itemize}
 
 \subsection{Approach: MoMa-LLM}
-To enable high-level reasoning, we construct a hierarchical scene graph $\mathcal{G}_{S}$ that abstracts the environment into room and object-level entities, grounded by a fine-grained navigational graph. The construction process consists of three stages: dynamic mapping, topological graph generation, and semantic classification.
+MoMa-LLM grounds Large Language Models (LLMs) in dynamically built scene graphs to enable zero-shot object search.
 
-\subsubsection{Dynamic RGB-D Mapping}
-The foundation of the scene representation is a semantic 3D map built from the robot's onboard perception.
+\subsubsection{Hierarchical 3D Scene Graph}
+The system builds a layered representation of the environment.
+
+\textbf{Voronoi Graph Construction}
 \begin{itemize}
-    \item \textbf{Voxel Grid Construction:} The agent processes a stream of posed RGB-D frames $\{I_{0},...,I_{t}\}$ containing semantic information \cite{ref1}. The point clouds from these frames are transformed into a global coordinate frame and arranged into a dynamic 3D voxel grid $\mathcal{M}_{t}$ \cite{ref2}. This grid is updated continuously as the agent explores new areas or observes dynamic changes \cite{ref3}.
-    \item \textbf{Occupancy Map:} To facilitate navigation, we derive a two-dimensional bird's-eye-view (BEV) occupancy map $\mathcal{B}_{t}$ from the 3D grid \cite{ref4}. This is achieved by analyzing "stixels" (vertical columns of voxels) in $\mathcal{M}_{t}$; we identify the highest occupied entry per stixel to infer obstacle positions, walls, and explored free space $\mathcal{F}_{t}$ \cite{ref5}.
+    \item \textbf{Construction:} Created from the Generalized Voronoi Diagram (GVD) of the inflated occupancy map, representing points equidistant to obstacles \cite{ref7}.
+    \item \textbf{Utility:} Provides a safe navigational backbone that maximizes clearance from obstacles, critical for mobile manipulators \cite{ref10}.
 \end{itemize}
 
-\subsubsection{Voronoi Graph (GVD)}
-We abstract the dense metric map into a sparse topological graph $\mathcal{G_{V}}$ to support efficient navigation and spatial reasoning.
+\textbf{Room Classification}
 \begin{itemize}
-    \item \textbf{Computation:} We first inflate the obstacles in the BEV map $\mathcal{B}_{t}$ using a Euclidean Signed Distance Field (ESDF) to ensure robustness \cite{ref6}. Based on this inflated map, we compute a Generalized Voronoi Diagram (GVD) \cite{ref7}. The GVD consists of a set of points (nodes) that have equal clearance to the closest obstacles \cite{ref8}. We filter this diagram by excluding nodes that are in the immediate vicinity of obstacles or outside the explored bounds $\mathcal{B}_{t}$ \cite{ref9}.
-    \item \textbf{Navigation Utility:} The resulting nodes and edges form the navigational Voronoi graph $\mathcal{G_{V}}=(\mathcal{V},\mathcal{E})$ \cite{ref10}. We extract the largest connected component to serve as the robot-centric navigation graph, sparsifying it to reduce the node count \cite{ref11}. This graph allows the robot to navigate robustly by maximizing clearance from obstacles.
+    \item \textbf{Prompting:} The LLM is provided with a list of object categories detected within a room cluster (e.g., "bed, lamp") \cite{ref19}.
+    \item \textbf{Output:} The LLM infers the semantic room label (e.g., "Bedroom"), allowing for open-vocabulary classification \cite{ref20}.
 \end{itemize}
 
-\subsubsection{Scene Graph \& Room Classification}
-The final layer, the 3D Scene Graph $\mathcal{G}_{S}$, clusters the Voronoi graph into semantic regions (rooms) and assigns objects to them.
-
+\subsubsection{High-Level Action Space}
+The agent operates using the following discrete high-level actions:
 \begin{itemize}
-    \item \textbf{Room Clustering (Door-Based Separation):} Unlike previous methods that rely on geometric constrictions (which fail in open layouts), we separate the global Voronoi graph $\mathcal{G}_{\mathcal{V}}$ into distinct room regions $\mathcal{G}_{\mathcal{V}}^{R}$ based on detected doors \cite{ref12}.
-    \begin{itemize}
-        \item We model the probability distribution of observed door positions using a mixture of Gaussians: $\rho_{\mathcal{N}}(x,H)=\frac{1}{N_{D}}\sum_{i=1}^{N_{D}}K_{H}(x-x_{i})$, where $x_{i}$ are door coordinates and $H$ is the bandwidth matrix \cite{ref13}.
-        \item Edges and nodes of the Voronoi graph that fall into high-probability door regions are removed, effectively cutting the graph into disjoint components representing distinct rooms \cite{ref14}.
-        \item Connectivity between these rooms is re-established by calculating shortest paths between the disjoint components; if a path traverses exactly two components, they are marked as neighbors \cite{ref15}.
-    \end{itemize}
-    \item \textbf{Object Assignment:} Objects are assigned to rooms by minimizing a weighted travel distance. For an object $o$, we identify the Voronoi node $n_{o}$ that minimizes the path length to the viewpoint $v_{p}$ from which the object was seen, weighted by the Euclidean distance to the object (Eq. 2 in the paper) \cite{ref16}. This prevents erroneous assignments through walls \cite{ref17}.
-    \item \textbf{LLM-Based Room Classification:} Once rooms are clustered and objects are assigned, we employ an LLM for open-set classification \cite{ref18}.
-    \begin{itemize}
-        \item As shown in Fig. 3, the LLM is provided with a list of object categories contained within each room cluster (e.g., "armchairs, carpet, table-lamp" for room-0) \cite{ref19}.
-        \item The LLM analyzes these object compositions to infer the semantic room type (e.g., classifying room-0 as a "living room" and room-1 as a "bedroom") \cite{ref20}. % Note: ref20 is invalid, mapped to last valid
-        \item This classification is performed dynamically at each high-level policy step as the scene evolves.
-    \end{itemize}
+    \item \texttt{Maps(room, object)}: Navigate to a specific object or location.
+    \item \texttt{go\_to\_and\_open(room, object)}: Navigate to and interact with a container (e.g., fridge).
+    \item \texttt{close(room, object)}: Close an opened container.
+    \item \texttt{explore(room)}: Visit unexplored frontiers associated with a specific room.
+    \item \texttt{done()}: Declare the task explicitly successful.
 \end{itemize}
 
 \subsubsection{Grounded High-Level Planning}
-The core contribution of MoMa-LLM lies in its ability to ground a Large Language Model (LLM) within a dynamically evolving scene graph. Rather than feeding raw data or unstructured lists to the model, the system extracts structured knowledge to bridge the gap between the robot's perception and the LLM's reasoning capabilities \cite{ref1}. This process ensures the planning is grounded in physical reality, specific enough to avoid hallucinations, and open-set to handle unknown environments \cite{ref2}.
+The system converts the dynamic graph into a structured text prompt for the LLM.
 
-\textbf{The Prompt Design}
-The text-based scene representation is wrapped in a carefully engineered prompt structure designed to elicit logical planning from the LLM. As illustrated in Fig. 4, the prompt consists of several distinct components \cite{ref8}:
+\textbf{Scene Structure Encoding}
 \begin{itemize}
-    \item \textbf{System \& Task:} Clearly defines the agent's role (e.g., "You are a robot in an unexplored house") and the specific goal (e.g., "Find a stove") \cite{ref9}.
-    \item \textbf{Skill API:} explicitly lists the available high-level function calls the robot can execute. These include \texttt{Maps(room, object)}, \texttt{go\_to\_and\_open(room, object)}, \texttt{close(room, object)}, \texttt{explore(room)}, and \texttt{done()} \cite{ref10}.
-    \item \textbf{Scene Context:} The structured knowledge extracted from the scene graph (as described above) is inserted here, detailing the current room, observed objects, and unexplored frontiers \cite{ref11}.
-    \item \textbf{Analysis \& Reasoning (Chain of Thought):} The prompt enforces a "Chain-of-Thought" process. It requires the LLM to first output an Analysis of where the target might be found and the necessary actions, followed by Reasoning to justify the specific next step, before finally generating the Command (function call) \cite{ref12}.
+    \item \textbf{Serialization:} The graph is serialized into a hierarchical list (Room -> Objects).
+    \item \textbf{Abstraction:} Distances are binned into natural language adjectives ("near", "far") and object states are explicit ("closed fridge") to facilitate reasoning \cite{ref1}.
 \end{itemize}
 
-\textbf{Handling History with Dynamic Re-alignment}
-A major challenge in dynamic scene graph planning is that the environment representation changes over time—rooms may be reclassified, or boundaries may shift as new areas are revealed \cite{ref13}. This makes a static history of previous actions invalid or confusing.
-MoMa-LLM addresses this via Dynamic Re-alignment:
+\textbf{Partial Observability}
 \begin{itemize}
-    \item \textbf{Tracking Positions:} Instead of just memorizing the text of previous commands, the system tracks the physical interaction positions of past actions \cite{ref14}.
-    \item \textbf{Re-mapping:} Before each new query to the LLM, the system re-aligns these past positions to the current state of the scene graph. It matches the old positions to the currently valid Voronoi nodes and room labels \cite{ref15}.
-    \item \textbf{Example:} If the robot previously executed \texttt{explore(living room)}, but identifying a fridge later causes that area to be reclassified as a kitchen, the history presented to the LLM in the next step will automatically update to \texttt{explore(kitchen)} \cite{ref16}.
+    \item \textbf{Frontiers:} Unknown space is explicitly represented as "Unexplored Area" (local) or "Leading Out" (global) nodes, allowing the LLM to reason about exploration \cite{ref6}.
+    \item \textbf{Replanning:} The prompt includes an "Analysis" and "Reasoning" step (Chain-of-Thought) before generating the next action command, with history dynamically realigned to the current map \cite{ref14}.
 \end{itemize}
-This ensures the LLM always acts on a consistent, up-to-date view of the world, preventing logical inconsistencies caused by the evolving map.
