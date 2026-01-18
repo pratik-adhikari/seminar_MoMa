@@ -1,0 +1,310 @@
+﻿Technical Audit and Verification Report: Forensic Analysis of "Language-Grounded Dynamic Scene Graphs" Review Document
+1. Executive Summary and Audit Scope
+This document serves as a comprehensive technical audit and forensic verification of the user-submitted file 'report.pdf' (hereafter referred to as the "Review Report"). The primary objective is to verify the accuracy, integrity, and scholarly validity of the Review Report by cross-referencing it against the original source material, the paper titled "Language-Grounded Dynamic Scene Graphs for Interactive Object Search with Mobile Manipulation" by Honerkamp et al. (2024) (hereafter referred to as the "Source Paper" or "MoMa-LLM Paper").
+The audit addresses a critical need in the evaluation of automated or semi-automated scientific literature reviews: ensuring that high-level summaries do not mask underlying hallucinations or bibliographic corruption. While the Review Report presents a superficially coherent narrative, a rigorous line-by-line comparison reveals significant discrepancies in citation integrity and academic referencing, despite a high degree of fidelity in the extraction of raw performance data.
+The scope of this audit encompasses four critical dimensions. First, we undertake a Narrative and Summary Verification, evaluating whether the Review Report accurately captures the architectural contributions, methodological innovations, and theoretical underpinnings of the Source Paper without distortion. Second, we perform a Data and Empirical Findings Check, rigorously comparing the statistical data, experimental results (Success Rates, SPL, AUC-E), and baseline comparisons presented in the Review Report against the tabulated data in the Source Paper. Third, we conduct a Citation and Reference Integrity audit, involving a deep forensic analysis of the bibliography provided in the Review Report to identify errors in citation mapping, bibliographic duplication, author attribution, and the validity of external sources. Finally, we assess Structural and Content Validity, identifying specific errors in formatting, logical flow, and the inclusion of anachronistic or irrelevant literature that compromises the document's fidelity to the Source Paper.
+The analysis indicates that while the Review Report accurately captures the high-level semantic themes of the MoMa-LLM approach, it suffers from critical failures in academic rigor, citation mapping, and bibliographic integrity. The Review Report correctly identifies the core metrics (e.g., 97.7% Success Rate for MoMa-LLM) but fails to attribute them to the correct sources within its own text. The bibliography is heavily corrupted, containing multiple duplicates of the Source Paper under different indices, missing author names, and referencing papers from 2025 that—while real—are extraneous to the context of the 2024 Source Paper or used to support claims they do not contain. Consequently, the Review Report is technically accurate regarding the Source Paper's performance metrics but structurally and academically invalid due to severe referencing errors and hallucinated mappings.1
+2. Theoretical Framework and Source Paper Ground Truth
+To provide a robust baseline for this audit, we must first establish the "Ground Truth" as defined by the Source Paper. This involves a detailed reconstruction of the MoMa-LLM architecture and its theoretical context, serving as the standard against which the Review Report is judged. The Source Paper, titled "Language-Grounded Dynamic Scene Graphs for Interactive Object Search with Mobile Manipulation," positions itself at the intersection of semantic mapping, large language models (LLMs), and mobile manipulation in unexplored environments.
+2.1 The MoMa-LLM Architecture
+The Source Paper introduces MoMa-LLM, a framework designed to enable mobile manipulation robots to perform long-horizon interactive object search tasks in unexplored environments. The core innovation lies in "grounding" Large Language Models (LLMs) not in raw visual data or static maps, but in a structured, dynamic scene graph. This represents a shift from purely geometric approaches to hybrid semantic-topological representations.
+2.1.1 Dynamic Scene Graph Construction
+Unlike static approaches that assume a pre-mapped environment, MoMa-LLM builds its representation on the fly as the robot explores. It utilizes a hierarchical structure that is critical for the audit because the Review Report attempts to describe this but fails to cite the underlying methodologies correctly.
+The foundation of the architecture is the Navigational Voronoi Graph ($G_V$). As detailed in the Source Paper, this graph is computed from a Generalized Voronoi Diagram (GVD) of an occupancy map. The GVD represents the topological "skeleton" of the free space, ensuring that the robot navigates along paths that maximize clearance from obstacles. This is a crucial feature for mobile manipulators which often have large footprints and kinematic constraints. The Review Report mentions this Voronoi graph but, as we will analyze in Section 5, fails to cite the relevant literature regarding Voronoi-based navigation, specifically confusing the Source Paper's contribution with previous works like VoroNav or Hydra.1
+Layered above the navigational graph is the Room Abstraction. The graph is partitioned into distinct rooms, a process that is vital for the semantic reasoning capabilities of the LLM. The Source Paper employs a door-based separation method, where edges in the Voronoi graph are pruned based on detected door locations. This is achieved using a Gaussian mixture model of door detections. This approach stands in contrast to geometry-based constriction methods used by baselines like Hydra, which rely on geometric narrowing of corridors to infer room boundaries. The distinction is significant: geometric methods often over-segment environments (e.g., splitting a long hallway into multiple "rooms"), whereas semantic door detection aligns more closely with human concepts of space. The Review Report's failure to distinguish these citations accurately (attributing Hydra's method to the Source Paper itself) blurs this critical theoretical contribution.
+Finally, the architecture incorporates Semantic Objects. Objects detected via RGB-D perception are inserted into the graph and associated with specific rooms. The Source Paper introduces a nuanced method for this association: objects are assigned to rooms based on traversal distance on the Voronoi graph rather than simple Euclidean proximity. This prevents errors where an object on one side of a wall is incorrectly assigned to the room on the other side due to spatial proximity, a common failure mode in non-topological mapping systems.
+2.1.2 Structured Language Grounding
+The Source Paper argues that feeding raw scene data (e.g., point clouds or occupancy grids) directly to an LLM is inefficient and prone to hallucination. Instead, MoMa-LLM extracts a textual description of the scene graph. This "Structured Knowledge Representation" serves as the interface between the robotic perception system and the high-level reasoning of the LLM.
+The prompt structure includes a hierarchical list of rooms and their contained objects (e.g., "Kitchen contains: [fridge, table...]"). Crucially, it encodes Object States, explicitly describing whether interactive objects are "open" or "closed" (e.g., "closed fridge"). This state awareness is what enables the "Interactive" aspect of the search task—the robot knows it must open a fridge to see inside. Furthermore, the system encodes Navigational Affordances by translating $A^*$ path distances into binned natural language descriptors (e.g., "near," "far"). This allows the LLM to make efficiency-based decisions without needing to process numerical path costs. Finally, Frontiers of unexplored space are explicitly named (e.g., "unexplored area in living room") and treated as pseudo-objects in the scene graph. This allows the LLM to reason about exploration as an action equivalent to navigation or manipulation.
+2.2 The Interactive Object Search Task
+The Source Paper defines a specific task: Interactive Semantic Object Search. This task definition is the benchmark for the experimental results and must be accurately reflected in the Review Report.
+The goal is to find a specific object category (e.g., "Find a spoon") in an environment that is initially fully unexplored. The key constraint that differentiates this from standard "ObjectNav" tasks is that objects may be hidden inside receptacles (drawers, cabinets) or located behind closed doors. Consequently, the agent cannot rely on directional reasoning alone; it must actively manipulate the environment. The action space reflects this, including primitives to navigate, open, close, and explore.
+The Source Paper compares MoMa-LLM against several baselines, which are critical for the Data Integrity Audit. These include HIMOS, a hierarchical reinforcement learning approach that learns to compose skills; ESC-Interactive, an extension of the ESC (Exploration with Soft Commonsense) method that scores frontiers based on semantic co-occurrence; and Unstructured LLM, an ablation study where the LLM receives raw JSON scene graphs rather than the curated prompt, testing the hypothesis that structure aids reasoning.
+2.3 Verified Experimental Data Ground Truth
+To audit the Review Report's data claims, we extract the following verified metrics directly from the Source Paper's "Table I" and "Results" section. These figures represent the immutable ground truth for the audit.
+Metric
+	MoMa-LLM (Ours)
+	HIMOS
+	ESC-Interactive
+	Unstructured LLM
+	Random
+	Success Rate (SR)
+	97.7%
+	93.7%
+	95.4%
+	86.3%
+	93.1%
+	SPL
+	63.6
+	48.5
+	62.7
+	59.4
+	50.2
+	AUC-E
+	87.2
+	77.4
+	84.5
+	77.6
+	77.0
+	Avg. Interactions
+	3.9
+	4.8
+	4.1
+	3.6
+	5.7
+	Table 1: Verified Ground Truth Metrics derived from Honerkamp et al. (2024).
+A key insight from the Source Paper is the introduction of AUC-E (Area Under the Efficiency Curve) as a primary metric. Traditional metrics like Success Rate (SR) are binary and depend on arbitrary time budgets (e.g., did the robot find the object within 1000 steps?). SPL (Success weighted by Path Length) accounts for path efficiency but penalizes exploration in complex interactive tasks. AUC-E, however, integrates the success rate across all possible time budgets. A high AUC-E indicates that the agent not only finds the object but finds it quickly, distinguishing efficient searchers from those that eventually succeed through brute-force exploration. The Review Report's handling of this metric is a specific point of interest in the audit.
+3. Narrative and Summary Verification
+This section analyzes the "Abstract," "Introduction," and "Paper Summary" sections of the Review Report to check for conceptual accuracy and potential hallucinations. A high-quality review must capture the nuances of the source text without introducing external noise or misinterpretation.
+3.1 Abstract and Introduction Analysis
+The Review Report's abstract claims: "We propose MoMa-LLM... grounds Large Language Models (LLMs) within structured representations derived from open-vocabulary scene graphs... dynamically updated as the environment is explored."
+Verification: Accurate. This phrasing aligns almost verbatim with the Source Paper's abstract. It correctly identifies the core mechanism (grounding LLMs in dynamic graphs) and the operational context (dynamic updates during exploration).
+The Review Report continues: "To rigorously benchmark performance, we introduce a novel evaluation paradigm utilizing full efficiency curves and the Area Under the Curve for Efficiency (AUC-E) metric."
+Verification: Conceptually Accurate, Referencing Failed. The content is factually correct; the Source Paper does indeed introduce the AUC-E metric to address the limitations of fixed-budget evaluation. However, the Review Report cites `` for this claim.
+Audit of Reference : In the Review Report's bibliography, Reference is listed as "Honerkamp, 'Moma-llm project page,' 2024." While the project page is a valid resource, attributing the definition of a novel scientific metric to a website rather than the peer-reviewed paper (which is available as Reference in the list) is academically weak. It suggests the summarization algorithm may have pulled the definition from metadata associated with the URL rather than the text of the paper itself.
+The Review Report states: "The task of interactive object search... objects are not always openly visible; they may be stored inside receptacles... or located behind closed doors ."
+Verification: Conceptually Accurate, Referencing Failed. This accurately describes the "Interactive Object Search" task as defined in the Source Paper. However, the citation `` is problematic.
+Audit of Reference : Reference is listed as "Language-grounded dynamic scene graphs... in RSS Workshop on Semantic Robotics, 2024." This is a duplicate entry of the Source Paper (which is also Reference ). While citing the workshop version of the paper is not factually wrong, it contributes to the bibliographic bloat and confusion that plagues the Review Report. A proper citation would consistently refer to the primary archival version (Reference ) to avoid the appearance of citing external authority when merely referencing the paper's own definitions.
+3.2 Methodological Description Analysis
+In Section 3.2.1 ("Hierarchical 3D Scene Graph"), the Review Report discusses the construction of the navigation graph: "Voronoi Graph Construction... Created from the Generalized Voronoi Diagram (GVD)... Provides a safe navigational backbone ."
+Verification: Accurate. The Source Paper explicitly states on Page 3 that it builds a GVD from the Euclidean Signed Distance Field (ESDF) to ensure safety.
+Citation Audit: The Review Report cites `` here. Reference is yet another duplicate of the Honerkamp Source Paper (arXiv version). The repetitive citation of the same work under different indices (, , , ) indicates a systematic failure in the reference management system used to generate the report.
+In the section on "Room Classification," the Review Report states: "The LLM is provided with a list of object categories detected within a room cluster (e.g., 'bed, lamp') ."
+Verification: Accurate Content, Hallucinated Reference. The Source Paper indeed describes a method where an LLM performs open-set room classification based on lists of detected objects (visualized in Fig. 3 of the Source Paper). The methodology description is correct.
+Audit of Reference : The Review Report cites `` for this methodology. Reference is listed as "Author, 'Open-vocabulary and semantic-aware reasoning for search and retrieval...', Autonomous Robots, 2025".
+Analysis of Error: This reference corresponds to a paper by Menon et al. (2025) , titled "Open-Vocabulary and Semantic-Aware Reasoning for Search and Retrieval of Objects in Dynamic and Concealed Spaces." While this paper deals with similar themes, it is not the source of the MoMa-LLM room classification method. The Source Paper (published in 2024) cannot leverage a method from a 2025 paper. This is a clear case of anachronistic hallucination, where the Review Report attributes a method from the verified text to a "future" paper that likely appeared in the retrieval context of the report generator but is causally irrelevant to the Source Paper.
+3.3 Summary Verdict
+The narrative content of the Review Report is highly faithful to the Source Paper. The summarization of the problem statement, the MoMa-LLM architecture, and the task definition is correct and captures the nuances of the "Interactive" search constraint well. However, the attribution of these facts is consistently erroneous. The Review Report maps correct facts to duplicate references or, more worryingly, to irrelevant and anachronistic references. This creates a document that reads correctly to a layperson but falls apart under academic scrutiny, as the "proof" provided for its claims (the citations) does not support the text.
+4. Data and Empirical Findings Verification
+This section performs a rigorous numerical audit of Section 3.3.3 ("Results") in the Review Report against Table I and Table III of the Source Paper. Accuracy in data reporting is non-negotiable for a technical report.
+4.1 Comparison of Key Metrics
+We compare the values reported in the Review Report against the Ground Truth established in Section 2.3.
+Metric
+	Source Paper Value (Verified)
+	Review Report Value
+	Comparison Status
+	MoMa-LLM Success Rate (Sim)
+	97.7%
+	97.7%
+	MATCH
+	MoMa-LLM AUC-E (Sim)
+	87.2
+	87.2%
+	MATCH (Report adds %)
+	HIMOS SPL
+	48.5
+	48.5
+	MATCH
+	MoMa-LLM Real-World SR
+	80% (8/10 episodes)
+	80%
+	MATCH
+	Unstructured LLM SR
+	86.3%
+	Not explicitly stated (Implied lower)
+	N/A
+	Analysis:
+The Review Report demonstrates high fidelity in transcribing the key performance indicators from the Source Paper. It correctly identifies that MoMa-LLM achieved 97.7% success in simulation and 80% in the real world. The inclusion of the exact AUC-E value (87.2) suggests that the report generator had access to the tabular data of the Source Paper and parsed it correctly.
+4.2 Analysis of Baseline Comparisons
+The Review Report states: "...significantly outperforming unstructured LLM baselines and RL-based methods like HIMOS (SPL 48.5) ."
+Fact Check: The comparison is factually correct. HIMOS achieved an SPL of 48.5, which is significantly lower than MoMa-LLM's 63.6, confirming the claim of "significant outperformance."
+Citation Audit: The Review Report cites `` for this data point.
+Audit of Reference : Reference is listed as "Author, 'N²m²: Learning navigation for arbitrary mobile manipulation...', IROS 2023."
+Context: $N^2M^2$ is a paper by Honerkamp et al. (2023). The Source Paper uses $N^2M^2$ as the low-level manipulation policy (Section V-B) to execute the open and close actions.
+Error: The results for HIMOS (SPL 48.5) on the specific "Interactive Search" task were generated in the Source Paper (Honerkamp 2024), not in the $N^2M^2$ paper (2023). While HIMOS (Schmalstieg et al., 2023) is an older method, the specific SPL value of 48.5 is a result of the comparative experiments conducted within the Source Paper. By citing ($N^2M^2$) for the HIMOS result, the Review Report commits a citation mapping error, attributing the result of the current study to a prior work that merely provided a sub-component of the system.
+4.3 Real-World Transfer Analysis
+The Review Report states: "The high-level reasoning transferred effectively to the real world (80% success rate), showing robustness to domain shifts in perception ."
+Fact Check: The data (80%) is correct. The Source Paper reports 8 successes out of 10 trials in the real-world apartment setting.
+Citation Audit: The Review Report cites ``.
+Audit of Reference : Reference is listed as "Z. Irshad, 'Awesome-robotics-3d github repository,' 2024."
+Error: This is a nonsensical citation. The experimental result (80% success) comes directly from the Source Paper's "Real-World Experiments" section (Section V-B). It does not come from a GitHub repository curation list. This is a clear hallucination of relevance, where the report generator likely identified the GitHub repository as a "related resource" in its retrieval step and erroneously mapped it to the experimental findings. Citing a curation list for primary experimental data undermines the credibility of the claim.
+5. Comprehensive Citation and Reference Audit
+This section constitutes the core of the forensic audit. The Review Report's bibliography contains 19 entries. A detailed analysis reveals that the text of the report is decoupled from its bibliography: citations in the text often do not correspond to the papers listed in the references, and the references themselves contain duplicates, anachronisms, and irrelevant entries.
+5.1 The Mapping Disconnect
+The most pervasive error in the Review Report is the Mapping Disconnect. The text uses citation numbers to refer to concepts (e.g., "Hydra "), but the bibliography list corresponds to different papers entirely (Reference is MoMa-LLM, not Hydra). This suggests the text was generated with one set of references in mind, but the bibliography was populated with a different set, likely due to a failure in the retrieval-augmented generation pipeline.
+5.2 Detailed Forensic Analysis of References through
+Reference : The Identity Crisis
+* Report Entry: e. a. Honerkamp, "Language-grounded dynamic scene graphs...", arXiv preprint arXiv:2403.08605, 2024.
+* Source Verification: This is the Source Paper.
+* Text Usage: The text in Section 2.1 says: "Hydra: Represents the state-of-the-art... ".
+* Audit Verdict: MAPPING ERROR. The text claims Ref is Hydra (Hughes et al., 2022). Ref is actually MoMa-LLM (Honerkamp et al., 2024). This error confuses the baseline with the proposed method, obscuring the contribution of the Source Paper.
+Reference : The Concept Confusion
+* Report Entry: e. a. Schmalstieg, "Learning long-horizon robot exploration strategies...", Proc. of ICRA, 2023.
+* Source Verification: This is a real paper by Schmalstieg, Honerkamp, et al.. It is Ref in the Source Paper's bibliography.
+* Text Usage: The text in Section 2.1 says: "Other: Approaches like Concept Graphs and VoroNav investigate zero-shot perception... ".
+* Audit Verdict: MAPPING ERROR. The text links Ref to "ConceptGraphs" (Gu et al., 2024) and "VoroNav" (Wu et al., 2024). However, Ref is Schmalstieg's "Learning long-horizon exploration," a different paper entirely. The report correctly identifies the names of the relevant papers in the text but fails to provide the correct citations in the bibliography.
+Reference : The Temporal Paradox (MORE)
+* Report Entry: e. a. Mohammadi, "More: Mobile manipulation rearrangement through grounded language reasoning," Preprint, 2025.
+* Source Verification: This is a real paper found in research snippets.4 Crucially, it is dated 2025.
+* Context: The Source Paper (MoMa-LLM) was published in 2024.
+* Audit Verdict: ANACHRONISM. The Review Report includes a paper from 2025 in a review of a 2024 paper. While it is acceptable for a review written in 2026 to cite newer work, the text uses it in contexts (e.g., "Robustness ") that imply it is part of the original study's validation. Reference is not cited in the Source Paper because it did not exist yet. This rewrites the history of the field, suggesting MoMa-LLM relies on future work.
+Reference : The Authorship Error (ESC)
+* Report Entry: e. a. Yang, "Esc: Exploration with soft commonsense constraints...", in ICRA, 2023.
+* Source Verification: This corresponds to the ESC paper (Zhou et al., 2023).7
+* Error: The Review Report lists the author as "Yang," but the actual lead author is Zhou (Kaiwen Zhou). "Yang" appears in the snippets as the author of a different 2025 paper ("Interleaved LLM..." ), suggesting the report generator conflated the metadata of two distinct papers.
+* Audit Verdict: AUTHOR ERROR. The paper title and venue are correct, but the authorship is falsified.
+Reference : The Irrelevant Insertion (LookPlanGraph)
+* Report Entry: e. a. Author, "Lookplangraph: Embodied instruction following method with vlm graph augmentation," in OpenReview, 2024.
+* Source Verification: This is a real paper: "LookPlanGraph" by Onishchenko et al. (2025).10
+* Audit Verdict: IRRELEVANT / HALLUCINATED CONNECTION. The Source Paper (MoMa-LLM) does not cite LookPlanGraph. LookPlanGraph was submitted to ICLR 2025. Its inclusion in the bibliography implies it was part of the MoMa-LLM study or related work context, which is false. It is likely included because the retrieval system found it as a "similar paper" and blindly added it to the list.
+Reference : The Anachronistic Critique
+* Report Entry: e. a. Yang, "Interleaved Ilm and motion planning for generalized multi-object collection...", arXiv preprint arXiv:2507.15782, 2025.
+* Source Verification: This is a real paper by Ruochu Yang et al., published July 2025.9
+* Text Usage: The text in Section 1 mentions "Limited Scope" of existing methods and cites ``.
+* Audit Verdict: ANACHRONISM. The text uses citation to support a claim about the "limitations of existing work" prior to MoMa-LLM. Citing a 2025 paper as "existing work" for a 2024 paper is chronologically impossible. This falsely frames MoMa-LLM as a response to a paper that had not yet been written.
+Reference : The GitHub Validity Failure
+* Report Entry: Z. Irshad, "Awesome-robotics-3d github repository," 2024.
+* Audit Verdict: LOW QUALITY. Citing a "Awesome list" GitHub repository to support a specific claim about "real-world transfer" (Section 3.3.3) is technically invalid. The claim is supported by the Source Paper's experiments, not by a curation list.
+5.3 The "Duplicate Clustering" Phenomenon
+A striking finding of the audit is the massive redundancy in the bibliography. The Review Report cites the Source Paper (Honerkamp et al., 2024) six times under different guises. This indicates a failure in the de-duplication logic of the report generator:
+1. Ref : arXiv version (arXiv:2403.08605).
+2. Ref : Project page (moma-llm.cs.uni-freiburg.de).
+3. Ref : arXiv version (Duplicate of ).
+4. Ref : arXiv version (Duplicate of , missing author).
+5. Ref : RSS Workshop version (Duplicate content).
+6. Ref : Scribd document (Low quality duplicate).
+7. Ref : Emergent Mind link (Aggregator duplicate).
+This redundancy bloats the bibliography and confuses the citation mapping, as the text arbitrarily switches between , , and to refer to the same paper.
+6. Detailed Analysis of Bibliographic Errors
+The following table synthesizes the specific errors identified in the bibliography of the Review Report, providing a clear "status" for each entry.
+Ref ID
+	Report Claimed Title/Topic
+	Actual Source (from Snippets)
+	Status
+	Correct MoMa-LLM Baseline?
+	****
+	Hydra (in text) / Honerkamp (in list)
+	Honerkamp 2024
+	Mismatch
+	No (Should be Hughes)
+	****
+	ConceptGraphs (in text) / Schmalstieg (in list)
+	Schmalstieg 2023
+	Mismatch
+	No (Should be Gu)
+	****
+	Learning hierarchical...
+	Schmalstieg 2023 (HIMOS)
+	Valid
+	Yes (Baseline)
+	****
+	MORE...
+	Mohammadi 2025
+	Anachronism
+	No (Future work)
+	****
+	MoMa-LLM Project Page
+	Website
+	Valid
+	N/A
+	****
+	ESC (Yang)
+	ESC (Zhou 2023)
+	Author Error
+	Yes (Baseline)
+	****
+	Honerkamp...
+	Honerkamp 2024
+	Duplicate
+	N/A
+	****
+	Language-grounded...
+	Honerkamp 2024
+	Duplicate
+	N/A
+	****
+	Language-grounded (RSS)...
+	Honerkamp 2024
+	Duplicate
+	N/A
+	****
+	LookPlanGraph...
+	Onishchenko 2025
+	Irrelevant
+	No
+	****
+	ESC (Yang)
+	ESC (Zhou 2023)
+	Duplicate
+	N/A
+	****
+	Honerkamp (Scribd)
+	Honerkamp 2024
+	Duplicate
+	N/A
+	****
+	$N^2M^2$ (Author)
+	Honerkamp 2023
+	Valid Paper / Bad Mapping
+	No (Method, not Results)
+	****
+	MoMa-LLM (Emergent Mind)
+	Honerkamp 2024
+	Duplicate
+	N/A
+	****
+	Interleaved LLM (Yang)
+	Yang 2025
+	Anachronism
+	No
+	****
+	Interleaved LLM (Abstract)
+	Yang 2025
+	Duplicate
+	No
+	****
+	Explainable Saliency (Chen)
+	Chen 2025
+	Anachronism
+	No
+	****
+	Awesome-robotics-3d
+	GitHub Repo
+	Invalid Source
+	No
+	****
+	Open-vocabulary (Menon)
+	Menon 2025
+	Anachronism
+	No
+	Table 2: Comprehensive forensic audit of the bibliography in report.pdf.
+7. Structural and Content Validity
+Beyond the specific data and citation errors, the Review Report exhibits structural flaws that compromise its utility as a scholarly review.
+7.1 Text-to-Citation Alignment
+The alignment between the narrative text and the citation indices is fractured.
+* Example 1: In Section 2.1, the report states: "Hydra... ". The reader expects Reference to be the Hydra paper (Hughes et al., 2022). Instead, Reference is the Source Paper itself. This circular referencing (citing the paper to explain a baseline different from the paper) is confusing.
+* Example 2: In Section 2.3, the report discusses "ESC... ". Reference is another duplicate of the Source Paper. The actual ESC paper is Reference (with the wrong author). The reader has no way to find the actual ESC paper based on the text.
+7.2 The "Future Paper" Hallucination
+The inclusion of papers from 2025 (References , , , , ) in a report purportedly summarizing a 2024 paper is a critical logical flaw. This likely results from a "Retrieval-Augmented Generation" (RAG) system that retrieved the "most recent" papers on scene graphs (which, at the time of the review's generation in 2026, would include 2025 papers) and indiscriminately injected them into the bibliography.
+* Impact: This rewrites the causal history of the field. It suggests that MoMa-LLM (2024) was built upon or responding to papers like "MORE" (2025) or "LookPlanGraph" (2025). In reality, MoMa-LLM likely influenced these papers. The Review Report inverts the arrow of scientific progress, treating successors as predecessors.
+8. Conclusion and Recommendations
+8.1 Summary of Findings
+The Review Report report.pdf is a technically accurate but bibliographically corrupted document.
+* Summary Accuracy: High (9/10). It correctly summarizes the content of the MoMa-LLM paper, describing the scene graph architecture, the LLM grounding, and the interactive search task with high fidelity.
+* Data Accuracy: Perfect (10/10). The numerical values for Success Rate, SPL, and AUC-E match the Source Paper exactly.
+* Citation Integrity: Critical Failure (1/10). The bibliography is a mix of duplicates, anachronisms, and irrelevant papers. The mapping between text and citations is broken.
+* Overall Validity: Low. While the text is readable, the document cannot be used for academic or technical purposes because the references do not support the claims in the way the text implies.
+8.2 Recommendations for Remediation
+To bring the report.pdf into compliance with academic standards and the ground truth of the Honerkamp2024...pdf, the following remediation steps are required:
+1. De-duplicate Bibliography: Collapse References , , , , , , into a single, canonical entry for Honerkamp et al. (2024).
+2. Restore Original References: Remove the 2025 papers (, , , , ) which are anachronistic. Replace them with the actual related work cited in the Source Paper:
+   * Hydra: Hughes et al. (2022).
+   * SayPlan: Rana et al. (2023).
+   * ConceptGraphs: Gu et al. (2024).
+   * HIMOS: Schmalstieg et al. (2023) (Ensure correct author attribution).
+3. Fix Citation Mapping: Ensure that when the text mentions "Hydra," the citation number corresponds to the Hughes paper, not the MoMa-LLM paper.
+4. Correct Authorship: Fix the author of ESC (Ref ) from "Yang" to "Zhou".
+5. Contextualize AUC-E: Rather than citing a project page, use the Source Paper itself to define the metric, and explain why it is superior to SPL for this specific task (rewarding speed in interactive search).
+This audit confirms that while the data extraction component of the Review Report generation was successful, the contextualization and referencing components failed, likely due to an over-reliance on unrelated recent literature retrieval. The document requires a complete bibliographic overhaul to be considered valid.
+Works cited
+1. Honerkamp2024 - Language Grounded Dynamic Scene Graphs for Interactive Object Search with Mobile Manipulation-1-9.pdf
+2. Language-Grounded Dynamic Scene Graphs for Interactive Object Search with Mobile Manipulation - OpenReview, accessed on January 18, 2026, https://openreview.net/pdf/f0ccb8e5511b7ca0d776b046872e4ed72e6e3233.pdf
+3. MORE: Mobile Manipulation Rearrangement Through Grounded Language Reasoning | Request PDF - ResearchGate, accessed on January 18, 2026, https://www.researchgate.net/publication/398057689_MORE_Mobile_Manipulation_Rearrangement_Through_Grounded_Language_Reasoning
+4. MORE: Mobile Manipulation Rearrangement Through Grounded Language Reasoning, accessed on January 18, 2026, https://more-model.cs.uni-freiburg.de/
+5. [2505.03035] MORE: Mobile Manipulation Rearrangement Through Grounded Language Reasoning - arXiv, accessed on January 18, 2026, https://arxiv.org/abs/2505.03035
+6. [2301.13166] ESC: Exploration with Soft Commonsense Constraints for Zero-shot Object Navigation - arXiv, accessed on January 18, 2026, https://arxiv.org/abs/2301.13166
+7. ESC: Exploration with Soft Commonsense Constraints for Zero-shot Object Navigation, accessed on January 18, 2026, https://proceedings.mlr.press/v202/zhou23r.html
+8. Interleaved LLM and Motion Planning for Generalized Multi-Object Collection in Large Scene Graphs - ResearchGate, accessed on January 18, 2026, https://www.researchgate.net/publication/393889782_Interleaved_LLM_and_Motion_Planning_for_Generalized_Multi-Object_Collection_in_Large_Scene_Graphs
+9. Code and benchmark for the paper "LookPlanGraph: Embodied Instruction Following Method with VLM Graph Augmentation". - GitHub, accessed on January 18, 2026, https://github.com/Onishenko-sci/LookPlanGraph
+10. [2512.21243] LookPlanGraph: Embodied Instruction Following Method with VLM Graph Augmentation - arXiv, accessed on January 18, 2026, https://arxiv.org/abs/2512.21243
+11. Interleaved LLM and Motion Planning for Generalized Multi-Object Collection in Large Scene Graphs - arXiv, accessed on January 18, 2026, https://arxiv.org/pdf/2507.15782

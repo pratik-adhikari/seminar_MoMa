@@ -2,57 +2,54 @@
 \label{sec:paper_summary}
 
 \subsection{Problem Statement}
-The authors address the challenge of embodied reasoning where a robotic agent must locate specific objects within large, unexplored environments.
+The authors address the challenge of embodied reasoning where a robotic agent must locate specific objects within large, unexplored environments \citetip{moma_llm}{MoMa-LLM (Honerkamp et al., 2024)}.
 
 \textbf{POMDP formulation}
 The problem is formalized as a Partially Observable Markov Decision Process (POMDP) tuple $\mathcal{M} = (S, A, O, T, P, r)$:
 \begin{itemize}
-    \item \textbf{S (States):} The complete state of the world, including robot pose, map, and object states (e.g., drawer open/closed) \citetip{ref3}{HIMOS (Schmalstieg et al., 2023)}.
-    \item \textbf{A (Actions):} Hybrid action space with high-level primitives (navigate, open) and low-level controllers \citetip{ref5}{MoMa-LLM Project Page}.
-    \item \textbf{O (Observations):} RGB-D images, robot pose, and semantic segmentations received by the agent \citetip{ref6}{ESC (Yang et al., 2023)}.
-    \item \textbf{T (Transition):} $T(s'|s, a)$ representing the probability of the state evolving from $s$ to $s'$ given action $a$ \citetip{ref7}{MoMa-LLM (Honerkamp et al., 2024)}.
-    \item \textbf{P (Observation model):} $P(o|s)$ representing the likelihood of receiving observation $o$ in state $s$ \citetip{ref8}{MoMa-LLM - OpenReview}.
-    \item \textbf{r (Reward):} Optimizing for efficient search (finding the object with minimal cost) \citetip{ref9}{MoMa-LLM - RSS Workshop}.
+    \item \textbf{S (States):} The complete state of the world, including robot pose, map, and object states \citetip{moma_llm}{MoMa-LLM (Honerkamp et al., 2024)}.
+    \item \textbf{A (Actions):} Hybrid action space with high-level primitives (navigate, open) and low-level controllers \citetip{moma_llm}{MoMa-LLM (Honerkamp et al., 2024)}.
+    \item \textbf{O (Observations):} RGB-D images, robot pose, and semantic segmentations \citetip{moma_llm}{MoMa-LLM (Honerkamp et al., 2024)}.
+    \item \textbf{T (Transition):} $T(s'|s, a)$ representing state evolution \citetip{moma_llm}{MoMa-LLM (Honerkamp et al., 2024)}.
+    \item \textbf{P (Observation model):} $P(o|s)$ representing observation likelihood \citetip{moma_llm}{MoMa-LLM (Honerkamp et al., 2024)}.
+    \item \textbf{r (Reward):} Optimizing for efficient search \citetip{moma_llm}{MoMa-LLM (Honerkamp et al., 2024)}.
 \end{itemize}
 
 \subsection{Approach: MoMa-LLM}
-MoMa-LLM grounds Large Language Models (LLMs) in dynamically built scene graphs to enable zero-shot object search.
+MoMa-LLM grounds Large Language Models in dynamically built scene graphs \citetip{moma_llm}{MoMa-LLM (Honerkamp et al., 2024)}.
 
 \subsubsection{Hierarchical 3D Scene Graph}
-The system builds a layered representation of the environment.
 
 \textbf{Voronoi Graph Construction}
 \begin{itemize}
-    \item \textbf{Construction:} Created from the Generalized Voronoi Diagram (GVD) of the inflated occupancy map, representing points equidistant to obstacles \citetip{ref7}{MoMa-LLM (Honerkamp et al., 2024)}.
-    \item \textbf{Utility:} Provides a safe navigational backbone that maximizes clearance from obstacles, critical for mobile manipulators \citetip{ref10}{LookPlanGraph}.
+    \item \textbf{Construction:} Created from the Generalized Voronoi Diagram (GVD) of the inflated occupancy map \citetip{moma_llm}{MoMa-LLM (Honerkamp et al., 2024)}.
+    \item \textbf{Utility:} Provides a safe navigational backbone that maximizes clearance from obstacles \citetip{moma_llm}{MoMa-LLM (Honerkamp et al., 2024)}.
 \end{itemize}
 
 \textbf{Room Classification}
 \begin{itemize}
-    \item \textbf{Prompting:} The LLM is provided with a list of object categories detected within a room cluster (e.g., "bed, lamp") \citetip{ref19}{Open-Vocabulary Search}.
+    \item \textbf{Prompting:} The LLM is provided with a list of object categories detected within a room cluster \citetip{moma_llm}{MoMa-LLM (Honerkamp et al., 2024)}.
 \end{itemize}
 
 \subsubsection{High-Level Action Space}
-The agent operates using the following discrete high-level actions:
 \begin{itemize}
     \item \texttt{Maps(room, object)}: Navigate to a specific object or location.
-    \item \texttt{go\_to\_and\_open(room, object)}: Navigate to and interact with a container (e.g., fridge).
+    \item \texttt{go\_to\_and\_open(room, object)}: Navigate to and interact with a container.
     \item \texttt{close(room, object)}: Close an opened container.
-    \item \texttt{explore(room)}: Visit unexplored frontiers associated with a specific room.
-    \item \texttt{done()}: Declare the task explicitly successful.
+    \item \texttt{explore(room)}: Visit unexplored frontiers.
+    \item \texttt{done()}: Declare the task successful.
 \end{itemize}
 
 \subsubsection{Grounded High-Level Planning}
-The system converts the dynamic graph into a structured text prompt for the LLM.
 
 \textbf{Scene Structure Encoding}
 \begin{itemize}
-    \item \textbf{Serialization:} The graph is serialized into a hierarchical list (Room -> Objects).
-    \item \textbf{Abstraction:} Distances are binned into natural language adjectives ("near", "far") and object states are explicit ("closed fridge") to facilitate reasoning \citetip{ref1}{MoMa-LLM (Honerkamp et al., 2024)}.
+    \item \textbf{Serialization:} The graph is serialized into a hierarchical list (Room -> Objects) \citetip{moma_llm}{MoMa-LLM (Honerkamp et al., 2024)}.
+    \item \textbf{Abstraction:} Distances are binned into natural language adjectives \citetip{moma_llm}{MoMa-LLM (Honerkamp et al., 2024)}.
 \end{itemize}
 
 \textbf{Partial Observability}
 \begin{itemize}
-    \item \textbf{Frontiers:} Unknown space is explicitly represented as "Unexplored Area" (local) or "Leading Out" (global) nodes, allowing the LLM to reason about exploration \citetip{ref6}{ESC (Yang et al., 2023)}.
-    \item \textbf{Replanning:} The prompt includes an "Analysis" and "Reasoning" step (Chain-of-Thought) before generating the next action command, with history dynamically realigned to the current map \citetip{ref14}{MoMa-LLM - Emergent Mind}.
+    \item \textbf{Frontiers:} Unknown space is explicitly represented as "Unexplored Area" nodes \citetip{moma_llm}{MoMa-LLM (Honerkamp et al., 2024)}.
+    \item \textbf{Replanning:} The prompt includes Chain-of-Thought reasoning with dynamic history realignment \citetip{moma_llm}{MoMa-LLM (Honerkamp et al., 2024)}.
 \end{itemize}
