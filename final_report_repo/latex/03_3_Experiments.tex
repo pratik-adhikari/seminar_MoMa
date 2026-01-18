@@ -3,28 +3,48 @@
 
 \subsubsection{Experimental Setup}
 \begin{itemize}
-    \item \textbf{Simulator:} iGibson (based on real-world scans) \citetip{igibson}{iGibson (Li et al., 2021)}.
+    \item \textbf{Simulator:} iGibson with 15 real-world scene scans \citetip{igibson}{iGibson (Li et al., 2021)}.
     \item \textbf{Robot (Sim):} Fetch mobile manipulator \citetip{moma_llm}{MoMa-LLM (Honerkamp et al., 2024)}.
-    \item \textbf{Robot (Real):} Toyota HSR \citetip{moma_llm}{MoMa-LLM (Honerkamp et al., 2024)}.
+    \item \textbf{Robot (Real):} Toyota HSR with RGB-D and LiDAR \citetip{moma_llm}{MoMa-LLM (Honerkamp et al., 2024)}.
+    \item \textbf{Real Environment:} 4-room apartment (kitchen, living room, hallway, bathroom) with 54 object categories.
 \end{itemize}
 
 \subsubsection{Evaluation Metrics}
 \begin{itemize}
-    \item \textbf{Success Rate (SR):} Percentage of episodes where the target object is found.
-    \item \textbf{SPL:} Success weighted by Path Length.
-    \item \textbf{AUC-E:} Area Under the Efficiency Curve, a novel metric \citetip{moma_llm}{MoMa-LLM (Honerkamp et al., 2024)}.
+    \item \textbf{Success Rate (SR):} Percentage of episodes where the target is found and \texttt{done()} is called.
+    \item \textbf{SPL:} Success weighted by Path Length---measures navigation efficiency.
+    \item \textbf{AUC-E:} Area Under the Efficiency Curve. \textit{Novel metric} integrating SR across all time budgets. High AUC-E indicates finding objects quickly, not just eventually \citetip{moma_llm}{MoMa-LLM (Honerkamp et al., 2024)}.
 \end{itemize}
 
 \subsubsection{Results}
 
-\textbf{Simulation}
+\textbf{Simulation Results}
+\begin{table}[h]
+\centering
+\begin{tabular}{lcccc}
+\toprule
+\textbf{Method} & \textbf{SR (\%)} & \textbf{SPL} & \textbf{AUC-E} & \textbf{Avg. Int.} \\
+\midrule
+MoMa-LLM & \textbf{97.7} & \textbf{63.6} & \textbf{87.2} & 3.9 \\
+ESC-Interactive & 95.4 & 62.7 & 84.5 & 4.1 \\
+HIMOS & 93.7 & 48.5 & 77.4 & 4.8 \\
+Unstructured LLM & 86.3 & 59.4 & 77.6 & 3.6 \\
+Random & 93.1 & 50.2 & 77.0 & 5.7 \\
+\bottomrule
+\end{tabular}
+\caption{Simulation results from Table I of the source paper.}
+\end{table}
+
+\textbf{Key Insights:}
 \begin{itemize}
-    \item \textbf{MoMa-LLM vs Baselines:} MoMa-LLM achieved SR 97.7\%, SPL 63.6, AUC-E 87.2 \citetip{moma_llm}{MoMa-LLM (Honerkamp et al., 2024)}.
-    \item \textbf{Failure Modes:} Primary failures due to perception limitations \citetip{moma_llm}{MoMa-LLM (Honerkamp et al., 2024)}.
+    \item MoMa-LLM achieves the highest SR (97.7\%), SPL (63.6), and AUC-E (87.2) \citetip{moma_llm}{MoMa-LLM (Honerkamp et al., 2024)}.
+    \item Unstructured LLM (raw JSON) achieves only 86.3\% SR with 0.41 invalid actions/episode vs 0.19 for MoMa-LLM---structured prompting is essential.
+    \item HIMOS achieves high SR (93.7\%) but poor efficiency (SPL 48.5), indicating brute-force exploration.
 \end{itemize}
 
-\textbf{Real-world Transfer}
+\textbf{Real-World Results}
 \begin{itemize}
-    \item \textbf{Transfer Capabilities:} 80\% success rate in real-world experiments \citetip{moma_llm}{MoMa-LLM (Honerkamp et al., 2024)}.
-    \item \textbf{Latency:} Main constraints were LLM query latency \citetip{moma_llm}{MoMa-LLM (Honerkamp et al., 2024)}.
+    \item Both MoMa-LLM and ESC achieved 80\% SR (8/10 episodes) \citetip{moma_llm}{MoMa-LLM (Honerkamp et al., 2024)}.
+    \item MoMa-LLM traveled 17.9m vs 33.9m for ESC---nearly half the distance.
+    \item MoMa-LLM required 2.2 interactions vs 3.5 for ESC.
 \end{itemize}

@@ -1,3 +1,11 @@
 \section{Conclusion}
 \label{sec:conclusion}
-MoMa-LLM establishes a robust standard for semantic grounding in exploration by treating the Scene Graph as a dynamic, structured prompt \citetip{moma_llm}{MoMa-LLM (Honerkamp et al., 2024)}. It effectively operationalizes the "world knowledge" of LLMs for robotics, proving that structured data organization is key to bridging the grounding gap. While issues of perception requirements and latency remain, the architectural blueprint of dynamic, language-grounded graphs marks a definitive shift towards hybrid neuro-symbolic architectures in embodied AI. Future work lies in cost-aware grounding and integrating VLM-based room classification \citetip{moma_llm}{MoMa-LLM (Honerkamp et al., 2024)}.
+MoMa-LLM establishes a new paradigm for semantic grounding in mobile manipulation by treating the scene graph as a dynamic, structured prompt \citetip{moma_llm}{MoMa-LLM (Honerkamp et al., 2024)}. The framework demonstrates three key findings:
+
+\begin{enumerate}
+    \item \textbf{Structured representations outperform raw data} for LLM-based planning (97.7\% vs 86.3\% SR).
+    \item \textbf{Interactive search} requires joint reasoning about navigation, exploration, and manipulation---not pairwise scoring.
+    \item \textbf{Dynamic scene graphs} with history realignment enable coherent long-horizon planning.
+\end{enumerate}
+
+The empirical validation---particularly the 87.2 AUC-E in simulation and efficient real-world transfer (17.9m vs 33.9m distance)---marks a significant step toward hybrid neuro-symbolic architectures for embodied AI.

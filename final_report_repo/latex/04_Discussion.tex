@@ -1,22 +1,31 @@
 \section{Discussion}
 \label{sec:discussion}
 
-\textbf{Strengths}
+\subsection{Strengths}
 \begin{itemize}
-    \item \textbf{Open-vocabulary reasoning:} Handles novel categories without retraining \citetip{moma_llm}{MoMa-LLM (Honerkamp et al., 2024)}.
-    \item \textbf{Structured reasoning:} Scene graphs enable LLM reasoning about geometry \citetip{moma_llm}{MoMa-LLM (Honerkamp et al., 2024)}.
-    \item \textbf{Robustness:} Resilient to segmentation errors and domain shifts \citetip{moma_llm}{MoMa-LLM (Honerkamp et al., 2024)}.
+    \item \textbf{Zero-shot Open-Vocabulary Reasoning:} Adapts to novel object/room categories without retraining \citetip{moma_llm}{MoMa-LLM (Honerkamp et al., 2024)}.
+    \item \textbf{Structured Grounding:} Scene graphs bridge perception and LLM reasoning, reducing hallucinations (0.19 invalid actions vs 0.41 for unstructured) \citetip{moma_llm}{MoMa-LLM (Honerkamp et al., 2024)}.
+    \item \textbf{Real-World Transfer:} 80\% success rate with sim-to-real transfer \citetip{moma_llm}{MoMa-LLM (Honerkamp et al., 2024)}.
+    \item \textbf{Robustness:} Policy functions even with 27.6\% room classification accuracy \citetip{moma_llm}{MoMa-LLM (Honerkamp et al., 2024)}.
 \end{itemize}
 
-\textbf{Limitations}
+\subsection{Limitations}
 \begin{itemize}
-    \item \textbf{Perception dependency:} Relies on high-quality semantics \citetip{moma_llm}{MoMa-LLM (Honerkamp et al., 2024)}.
-    \item \textbf{Latency:} LLM queries dominate runtime \citetip{moma_llm}{MoMa-LLM (Honerkamp et al., 2024)}.
-    \item \textbf{Cost blindness:} High-level planning decoupled from execution costs \citetip{moma_llm}{MoMa-LLM (Honerkamp et al., 2024)}.
+    \item \textbf{Perception Dependency:} Requires ground-truth semantic masks, depth, localization, and handle detection \citetip{moma_llm}{MoMa-LLM (Honerkamp et al., 2024)}.
+    \item \textbf{Open-Room Layouts:} Door-based separation struggles with open floor plans \citetip{moma_llm}{MoMa-LLM (Honerkamp et al., 2024)}.
+    \item \textbf{Computational Latency:} LLM queries dominate runtime; full graph recomputation at each step \citetip{moma_llm}{MoMa-LLM (Honerkamp et al., 2024)}.
+    \item \textbf{Sparse Feedback:} Only ``success/failure'' signals---cannot distinguish gripper slip from locked door \citetip{moma_llm}{MoMa-LLM (Honerkamp et al., 2024)}.
 \end{itemize}
 
-\textbf{Reproducibility}
+\subsection{Future Directions}
 \begin{itemize}
-    \item \textbf{Code availability:} Project page available \citetip{moma_project}{MoMa-LLM Project Page}.
-    \item \textbf{Missing details:} Real-world failure analysis limited \citetip{moma_llm}{MoMa-LLM (Honerkamp et al., 2024)}.
+    \item \textbf{Vision-Language Models:} Replace adjective-based encodings with dense visual representations \citetip{moma_llm}{MoMa-LLM (Honerkamp et al., 2024)}.
+    \item \textbf{Noisy Perception:} Construct graphs from raw sensor data without ground-truth assumptions.
+    \item \textbf{Holistic Room Clustering:} Incorporate spatial and semantic details beyond door detection.
+\end{itemize}
+
+\subsection{Reproducibility}
+\begin{itemize}
+    \item \textbf{Project Page:} \url{https://moma-llm.cs.uni-freiburg.de/} \citetip{moma_project}{MoMa-LLM Project Page}.
+    \item \textbf{Code:} Referenced but full pipeline details limited.
 \end{itemize}
